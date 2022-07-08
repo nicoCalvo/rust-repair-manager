@@ -1,0 +1,201 @@
+[
+    {
+        "_id": "62b508b83ace7b97f2708f07",
+        "customer":"62b508b73ace7b97f2707632",
+        "product": {
+            "_id": "62b508b83ace7b97f2708f14",
+            "_type": "CELULAR",
+            "brand": "SAMSUNG",
+            "model": "S8 SM-G955U",
+            "serial_number": "357758080458187",
+            "created_at": "2018-03-31T20:04:56.904728Z"
+        },
+        "logs": [
+            {
+                "entry": "Delivered",
+                "status": "Entregada",
+                "created_at": "2018-04-06T20:26:03.466739Z",
+                "by": "Matias"
+            },
+            {
+                "entry": "se le hizo limpieza al sensor de aproximidad! ahora  funciona bien",
+                "status": "Para entregar",
+                "created_at": "2018-04-06T19:50:14.825899Z",
+                "by": "Martin"
+            },
+            {
+                "entry": "INGRESO",
+                "status": "Recibida",
+                "created_at": "2018-04-06T13:26:04.466938Z",
+                "by": "Maxi"
+            },
+            {
+                "entry": "Comienzo de reparacion",
+                "status": "En progreso",
+                "created_at": "2018-04-06T19:49:23.907743Z",
+                "by": "Martin"
+            }
+        ],
+        "status": "Entregada",
+        "description": "CUANDO ESCUCHA UN AUDIO O REPRODUCE SONIDO SE APAGA PANTALLA",
+        "additional": "SOLO UNIDAD",
+        "suggested_price": 0,
+        "warranty": 3,
+        "received_date": "2018-04-06T13:26:04.465090Z",
+        "estimated_fixed_date": "2018-04-11",
+        "finished_repair": null,
+        "delivered_date": "2018-04-06T20:26:03.466739Z",
+        "voided_date": null,
+        "technician": "Juan",
+        "bill": {
+            "amount": 400,
+            "pay_method": "Efectivo",
+            "created_at": "2018-04-06T17:11:09.724676Z",
+            "by": "62b508b73ace7b97f2708f00"
+        },
+        "voided": false,
+        "old_id": 4048,
+        "received_by": "Maxi"
+    },
+    {
+        "_id": "62b508b83ace7b97f2708f09",
+        "customer": "62b508b73ace7b97f2707633",
+        "product": {
+            "_id": "62b508b83ace7b97f2708f3c",
+            "_type": "CELULAR",
+            "brand": "LG",
+            "model": "H340AR",
+            "serial_number": "359975-06-568108-2",
+            "created_at": "2018-03-31T21:02:31.932719Z"
+        },
+        "logs": [
+            {
+                "entry": "ver que quiere hacer el cliente",
+                "status": "Confirmacion presupuesto",
+                "created_at": "2018-04-17T17:27:48.984433Z",
+                "by": "Matias"
+            },
+            {
+                "entry": "Comienzo de reparacion",
+                "status": "En progreso",
+                "created_at": "2018-04-17T17:16:52.271818Z",
+                "by": "Matias"
+            },
+            {
+                "entry": "se llamo y no responde",
+                "status": "En progreso",
+                "created_at": "2018-04-17T17:28:03.221699Z",
+                "by": "Matias"
+            },
+            {
+                "entry": "tiene la memoria ram y la placa de video dañada. Se tiene que cambiar la memoria",
+                "status": "En progreso",
+                "created_at": "2018-04-17T17:27:03.874327Z",
+                "by": "Matias"
+            },
+            {
+                "entry": "acepto el presupuesto.",
+                "status": "Para entregar",
+                "created_at": "2018-04-18T16:22:40.713984Z",
+                "by": "Matias"
+            },
+            {
+                "entry": "INGRESO",
+                "status": "Recibida",
+                "created_at": "2018-04-14T15:26:35.914314Z",
+                "by": "Matias"
+            },
+            {
+                "entry": "una nueva sale $1200 de contado o $1500 de tarjeta",
+                "status": "En progreso",
+                "created_at": "2018-04-17T17:27:15.961364Z",
+                "by": "Matias"
+            },
+            {
+                "entry": "Entregada",
+                "status": "Entregada",
+                "created_at": "2018-05-04T21:36:57.279607Z",
+                "by": "Matias"
+            }
+        ],
+        "status": "Entregada",
+        "description": "NO DA IMAGEN",
+        "additional": "solo unidad",
+        "suggested_price": 0,
+        "warranty": 3,
+        "received_date": "2018-04-14T15:26:35.912447Z",
+        "estimated_fixed_date": "2018-04-18",
+        "finished_repair": "2018-04-18T03:00:00Z",
+        "delivered_date": "2018-05-04T03:00:00Z",
+        "technician": "Pepe",
+        "voided_date": null,
+        "bill": {
+            "amount": 1200,
+            "pay_method": "Efectivo",
+            "created_at": "2018-05-03T00:05:29.466314Z",
+            "by": "62b508b73ace7b97f2708f00"
+        },
+        "voided": false,
+        "old_id": 4111,
+        "received_by": "Matias"
+    },
+    {
+        "_id": "62b508b83ace7b97f2708f0b",
+        "customer": "62b508b73ace7b97f2707633",
+        "product": {
+            "_id": "62b508b83ace7b97f2708f3c",
+            "_type": "CELULAR",
+            "brand": "LG",
+            "model": "H340AR",
+            "serial_number": "359975-06-568108-2",
+            "created_at": "2018-03-31T21:02:31.932719Z"
+        },
+        "technician": "Pepe",
+        "logs": [
+            {
+                "entry": "Sin reparacion, esta destruida",
+                "status": "Para entregar",
+                "created_at": "2018-04-17T17:14:50.025057Z",
+                "by": "Matias"
+            },
+            {
+                "entry": "Entregada",
+                "status": "Entregada",
+                "created_at": "2018-04-20T15:55:06.432625Z",
+                "by": "Matias"
+            },
+            {
+                "entry": "INGRESO",
+                "status": "Recibida",
+                "created_at": "2018-04-13T13:43:02.866391Z",
+                "by": "Matias"
+            },
+            {
+                "entry": "Comienzo de reparacion",
+                "status": "En progreso",
+                "created_at": "2018-04-17T17:14:31.401530Z",
+                "by": "Matias"
+            }
+        ],
+        "status": "Entregada",
+        "description": "PRESUPUESTO NO DA IMAGEN",
+        "additional": "solo unidad",
+        "suggested_price": 0,
+        "warranty": 3,
+        "received_date": "2018-04-13T13:43:02.864584Z",
+        "estimated_fixed_date": "2018-04-16",
+        "finished_repair": "2018-04-17T03:00:00Z",
+        "delivered_date": "2018-04-20T03:00:00Z",
+        "voided_date": null,
+        "bill": {
+            "amount": 1,
+            "pay_method": "Efectivo",
+            "created_at": "2018-04-17T16:06:20.290388Z",
+            "by": "62b508b73ace7b97f2708f01"
+        },
+        "voided": false,
+        "old_id": 4105,
+        "received_by": "Matias"
+    }
+   
+]

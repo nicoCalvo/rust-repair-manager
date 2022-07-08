@@ -1,0 +1,20 @@
+[
+    {
+        "_id":  "62b508b73ace7b97f2708f00",
+        "username": "Matias",
+        "last_login": "2018-03-29T20:01:40.531+0000",
+        "password": "3f48775b44c7ed69b27b307289debbe689c2a58903e7b7d17c32fa5538221ee9",
+        "email": "matias@arrobatech.com.ar",
+        "date_joined": "2018-03-29T20:01:40.531+0000",
+        "old_id": 1
+    },
+{
+        "_id":  "62b508b73ace7b97f2708f01",
+        "username": "Maxi",
+        "last_login": "2018-03-29T20:01:40.531+0000",
+        "password": "fc074d2afd40859d751239a581112c62a5c8df92f9ec904aefae8ab5c2a5e21c",
+        "email": "maxi@arrobatech.com.ar",
+        "date_joined": "2019-03-29T20:01:40.531+0000",
+        "old_id": 2
+    }
+]

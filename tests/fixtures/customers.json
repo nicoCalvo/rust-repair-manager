@@ -1,0 +1,53 @@
+[
+    {
+        "_id":"62b508b73ace7b97f2707632",
+        "name": "YOLANDA",
+        "last_name": "RAMIREZ",
+        "location": "BAHIA BLANCA",
+        "street": "CASTELLI",
+        "number": "430",
+        "phone": "2914315347",
+        "email": "NOTIENE@MAIL.COM",
+        "repaired_products": [
+            {
+                "_id": "62b508b83ace7b97f2708f14",
+                "_type": "CELULAR",
+                "brand": "SAMSUNG",
+                "model": "S8 SM-G955U",
+                "serial_number": "357758080458187",
+                "created_at": "2018-03-31T20:04:56.904728Z"
+            }
+        ],
+        "old_id": 1
+    },
+{
+        "_id": "62b508b73ace7b97f2707633",
+        "name": "PABLO ARIEL",
+        "last_name": "OTRANTO",
+        "location": "BAHIA BLANCA",
+        "street": "12 DE OCTUBRE",
+        "number": "833",
+        "phone": "156489508",
+        "email": "ARIELOTRANTO@GMAIL.COM",
+        "repaired_products": [
+            {
+                "_id": "62b508b83ace7b97f2708f3c",
+                "_type": "CELULAR",
+                "brand": "LG",
+                "model": "H340AR",
+                "serial_number": "359975-06-568108-2",
+                "created_at": "2018-03-31T21:02:31.932719Z"
+            },
+            {
+                "_id": "62b508b83ace7b97f2708f4a",
+                "_type": "CELULAR",
+                "brand": "LG",
+                "model": "H340",
+                "serial_number": "0000000000",
+                "created_at": "2018-04-04T11:54:58.506592Z"
+            }
+        ],
+        "old_id": 2
+    }
+  
+]
