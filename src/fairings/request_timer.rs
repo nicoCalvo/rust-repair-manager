@@ -4,14 +4,10 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::SystemTime;
 use rocket::{debug, error, info};
 
-use mongodb::Database;
-use rocket::http::uri::Origin;
-use rocket::tokio::time::Instant;
 use rocket::{Request, Data, Response, request};
 use rocket::fairing::{Fairing, Info, Kind};
 use rocket::http::{Method, ContentType, Status};
 
-use rocket::{State};
 
 
 

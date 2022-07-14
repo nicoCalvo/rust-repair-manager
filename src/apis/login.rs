@@ -1,17 +1,15 @@
 #[allow(unused_imports)]
 
 use futures::io::Cursor;
-use futures::stream::StreamExt;
 use mongodb::bson::oid::ObjectId;
 
 use mongodb::Collection;
-use mongodb::bson::{Document, doc};
-use mongodb::options::{FindOptions, CountOptions};
+use mongodb::bson::{doc};
 use rocket::time::{OffsetDateTime, Duration};
 use serde::{Deserialize, Serialize};
-use rocket::http::{Cookie, CookieJar, ContentType};
+use rocket::http::{Cookie, CookieJar};
 use rocket::serde::json::Json;
-use rocket::{State, Response, request, Request};
+use rocket::{State};
 
 use crate::database;
 use crate::models;
@@ -22,7 +20,7 @@ use utils::hash_password;
 use database::db::DbPool;
 use models::user::User;
 
-use rocket::response::status::{self, Forbidden};
+use rocket::response::status::{Forbidden};
 
 
 
@@ -37,7 +35,7 @@ pub struct LoginInfo{
 pub async fn login<'r>(
     login_info: Json<LoginInfo>,
     cookies: &CookieJar<'_>,
-    mongo_db: &State<DbPool>
+    mongo_db: &State<DbPool>,
 )-> Result<Json<User>, Forbidden<String>>{
     
     let col_users: Collection<User> = mongo_db.mongo.collection("users");

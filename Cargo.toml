@@ -10,16 +10,23 @@ pbkdf2 = "0.11.0"
 mongodb = "2.2.2"
 rocket =  { version = "0.5.0-rc.2", features = ["secrets", "json"] }
 dotenv = "0.15.0"
-bson = { version = "2", features = ["chrono-0_4"] }
+bson = { version = "2.2.0", features = ["chrono-0_4"] }
 futures = { version = "0.3", default-features = false }
 serde = "1.0.136"
 chrono = { version = "0.4.19", features = ["serde", "rustc-serialize"] }
 rust-crypto = "^0.2"
-env_logger="0.9.0"
+log = "0.4"
+fern="0.6.1"
+
 
 [[example]]
 name = "json_file"
 
+[[example]]
+name = "filtered_collection_results"
+
+[[example]]
+name = "bson"
 
 [dev-dependencies]
 serde_json = "1.0.66"

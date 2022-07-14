@@ -3,7 +3,6 @@
 #[macro_use]
 extern crate rocket;
 
-use rocket::{info, error, debug};
 
 pub mod database;
 use database::db::{DbPool, connect};
@@ -12,7 +11,7 @@ mod apis;
 pub mod models;
 
 pub mod utils;
-
+use utils::logger::setup_logger;
 mod fairings;
 
 
@@ -20,7 +19,7 @@ mod fairings;
 
 #[launch]
 pub async fn rocket() -> _ {
-    env_logger::init();
+    setup_logger();
     info!("YOLO!");
     // aca hacer un get config y ver si es debug o no para setear la url
     let db = connect().await;

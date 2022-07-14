@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use super::repaired_product::RepairedProduct;
 
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Customer {
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
     pub id: Option<bson::oid::ObjectId>,
@@ -38,6 +38,7 @@ impl Default for Customer{
         }
     }
 }
+
 
 #[cfg(test)]
 mod test{

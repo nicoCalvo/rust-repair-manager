@@ -1,6 +1,5 @@
 #[allow(unused_imports)]
 use rocket::{Rocket, State, Build};
-use rocket::fairing::AdHoc;
 
 
 mod common;
@@ -20,7 +19,7 @@ mod test {
 
     #[async_test]
     async fn test_login() {
-        let db = DbFixture::new().await;
+        let mut db = DbFixture::new().await;
         db.load_users().await;
         let client = Client::tracked(repair_manager::rocket().await).await.unwrap();
         let mut map = HashMap::new();
@@ -62,7 +61,7 @@ mod test {
         let exp_exp_date = (now.year(), now.month(), now.day(), now.hour());
         assert_eq!(exp_date, exp_exp_date);
         assert!(user_cookie.http_only().unwrap());
-
+        db.clean().await
     }
   
 

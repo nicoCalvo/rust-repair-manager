@@ -21,7 +21,7 @@ pub struct User{
 
 #[cfg(test)]
 mod test{
-    use bson::doc;
+    use bson::{doc, Bson};
     use chrono::Utc;
 
     use super::*;
