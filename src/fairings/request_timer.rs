@@ -1,4 +1,4 @@
-#![allow(dead_code)]
+#![allow(dead_code, unused_imports)]
 
 use std::time::SystemTime;
 use rocket::{debug, error, info};
@@ -32,7 +32,7 @@ impl Fairing for RequestTimer {
     async fn on_request(&self, _req: &mut Request<'_>, _data: &mut Data<'_>) {
 
         let cookies = _req.cookies();
-        let auth_cookie = cookies.get_private("user_id");
+        let _auth_cookie = cookies.get_private("user_id");
         _req.local_cache(|| TimerStart(Some(SystemTime::now())));
        
         

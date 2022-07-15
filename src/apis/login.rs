@@ -1,4 +1,4 @@
-#[allow(unused_imports)]
+#![allow(unused_imports)]
 
 use futures::io::Cursor;
 use mongodb::bson::oid::ObjectId;
@@ -8,11 +8,13 @@ use mongodb::bson::{doc};
 use rocket::time::{OffsetDateTime, Duration};
 use serde::{Deserialize, Serialize};
 use rocket::http::{Cookie, CookieJar};
-use rocket::serde::json::Json;
+use rocket::serde::json::{Json, self};
+use rocket::serde::json::json;
 use rocket::{State};
+use rocket::serde::json::Value;
 
 use crate::database;
-use crate::models;
+use crate::models::{self, user};
 use crate::utils;
 
 use utils::hash_password;
@@ -43,17 +45,21 @@ pub async fn login<'r>(
     // check ip origin and add as private attribute http-only
 
     // Return existing session if valid cookie provided
-    if let Some(user_id) =  cookies.get_private("user_id"){
-        let user_id = user_id.value();
-        
-        let user = col_users.find_one(doc!{"_id": ObjectId::parse_str(user_id).unwrap()}, None).await.unwrap();
+    if let Some(user_cookie) =  cookies.get_private("user"){
+        let user_cookie: Value = json::from_str(user_cookie.value()).unwrap();
+        let id = user_cookie["id"].as_str().unwrap();
+        let user = col_users.find_one(doc!{"_id": ObjectId::parse_str(id).unwrap()}, None).await.unwrap();
         match user{
             Some(u) =>{
-                let mut cookie = Cookie::new("user_id", u.id.unwrap().to_string());
+                let user_cookie_info = json!({
+                    "id": u.id.unwrap().to_string(),
+                    "role": u.role
+                });
+                let mut user_cookie = Cookie::new("user", user_cookie_info.to_string());
                 let mut now = OffsetDateTime::now_utc();
                 now += Duration::hours(10);
-                cookie.set_expires(now);
-                cookies.add_private(cookie);
+                user_cookie.set_expires(now);
+                cookies.add_private(user_cookie);
                 return Ok(Json(u));
             },
             None =>{
@@ -74,12 +80,16 @@ pub async fn login<'r>(
             if user.password != hash_password(&login_info.password){
                 Err(Forbidden(Some("Invalid User or password".to_string())))
             }else{
-                let mut cookie = Cookie::new("user_id", user.id.unwrap().to_string());
+                let user_cookie_info = json!({
+                    "id": user.id.unwrap().to_string(),
+                    "role": user.role
+                });
+                let mut user_cookie = Cookie::new("user", user_cookie_info.to_string());
                 let mut now = OffsetDateTime::now_utc();
                 now += Duration::hours(10);
-                cookie.set_expires(now);
-                cookies.add_private(cookie);
-                Ok(Json(user))
+                user_cookie.set_expires(now);
+                cookies.add_private(user_cookie);
+                return Ok(Json(user));
             }
         },
         _ => Err(Forbidden(Some("Invalid User or password".to_string())))
@@ -90,6 +100,6 @@ pub async fn login<'r>(
 
 #[post("/logout")]
 pub fn logout(cookies: &CookieJar<'_>) {
-    cookies.remove_private(Cookie::named("user_id"));
+    cookies.remove_private(Cookie::named("user"));
     
 }

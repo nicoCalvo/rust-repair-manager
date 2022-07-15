@@ -257,7 +257,7 @@ impl LoggedClient{
             .json(&creds)
             .dispatch()
             .await;
-        let kuki = res.cookies().get_private("user_id").unwrap();
+        let kuki = res.cookies().get_private("user").unwrap();
         self.kuki = Some(kuki);
         assert_eq!(res.status(), Status::Ok);
 
@@ -271,7 +271,7 @@ impl LoggedClient{
         //           argument requires that `'1` must outlive `'static`
         let cookie = match self.kuki.as_ref(){
             Some(c) =>c.to_owned(),
-            None =>  Cookie::new("user_id", "invalid")
+            None =>  Cookie::new("user", "invalid")
         };
         self.client.post(uri)
             .header(ContentType::JSON)
@@ -286,7 +286,7 @@ impl LoggedClient{
     {   
         let cookie = match self.kuki.as_ref(){
             Some(c) =>c.to_owned(),
-            None =>  Cookie::new("user_id", "invalid")
+            None =>  Cookie::new("user", "invalid")
         };
         self.client.put(uri)
             .header(ContentType::JSON)

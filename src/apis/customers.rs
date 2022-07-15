@@ -94,8 +94,6 @@ pub struct UpdateCustomer {
 
 
 
-
-
 #[put("/", format="application/json", data="<update_customer>")]
 pub async fn update_customer(
     update_customer: Json<UpdateCustomer>,

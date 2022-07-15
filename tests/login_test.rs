@@ -21,7 +21,7 @@ mod test {
     #[async_test]
     async fn test_login() {
         let mut db = DbFixture::new().await;
-        db.load_users().await;
+        db.load_admin().await;
         let client = Client::tracked(repair_manager::rocket().await).await.unwrap();
         let mut map = HashMap::new();
         map.insert("email", "matias@arrobatech.com.ar");
@@ -32,9 +32,10 @@ mod test {
             .dispatch()
             .await;
         let cookies = resp.cookies();
-        let user_cookie = cookies.get_private("user_id");
+        let user_cookie = cookies.get_private("user");
         assert!(user_cookie.is_some());
         let user_cookie = user_cookie.unwrap();
+        dbg!(&user_cookie);
         assert!(user_cookie.http_only().unwrap());
         assert_eq!(resp.status(), Status::Ok);
 
@@ -50,10 +51,10 @@ mod test {
         let cookies = resp.cookies();
 
         // ensure cookie with user_id is set as private
-        let user_cookie = cookies.get_private("user_id");
+        let user_cookie = cookies.get_private("user");
         assert!(user_cookie.is_some());
         let user_cookie = user_cookie.unwrap();
-
+        dbg!(&user_cookie);
         // ensure private cookie `user_id` expires in 10 hours
         let dt_exp = user_cookie.expires_datetime().unwrap();
         let mut now = OffsetDateTime::now_utc();

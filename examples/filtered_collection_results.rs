@@ -1,4 +1,4 @@
-#![allow(dead_code)]
+#![allow(dead_code, unused_imports)]
 // Example of how a collection can be "casted" to a minified version of the actual data structure
 //
 // In this case, User is a dataset with many field, and the collection type defines only

@@ -1,11 +1,15 @@
+#![allow(unused_imports, dead_code)]
 use bson::doc;
-#[allow(unused_imports)]
+
 
 use bson::oid::ObjectId;
 use mongodb::Collection;
 use rocket::outcome::Outcome::{*, self};
 use rocket::request::{self, Request, FromRequest};
 use rocket::http::Status;
+use rocket::serde::json;
+use rocket::serde::json::Value;
+use rocket::serde::json::json;
 
 use crate::database;
 use crate::models;
@@ -16,7 +20,7 @@ use models::user::User;
 
 pub struct UserRequest{
     id: ObjectId,
-    name: String
+    name: String,
 }
 
 
@@ -25,6 +29,7 @@ pub enum AuthCookieError {
     Missing,
     Invalid,
 }
+
 
 #[rocket::async_trait]
 impl<'r> FromRequest<'r> for UserRequest{
@@ -35,9 +40,11 @@ impl<'r> FromRequest<'r> for UserRequest{
 
         let pool = request.rocket().state::<DbPool>().unwrap();
         let users_col: Collection<User> = pool.mongo.collection::<User>("users");
-        let user_cookie = request.cookies().get_private("user_id");
-        if let Some(user_id) = user_cookie {
-            match ObjectId::parse_str(user_id.value()){
+        let user_cookie = request.cookies().get_private("user");
+        if let Some(user) = user_cookie {
+            let user: Value = json::from_str(user.value()).unwrap_or(json!({"id": ""}));
+            let id = user["id"].as_str().unwrap();
+            match ObjectId::parse_str(id){
                 Ok(user) =>{
                     let user_res = users_col.find_one(doc!{"_id": user}, None).await.unwrap();
                     if let Some(user_obj) = user_res{

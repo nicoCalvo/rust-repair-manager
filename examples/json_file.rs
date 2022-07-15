@@ -1,5 +1,4 @@
-#![allow(dead_code)]
-#[allow(unused_imports)]
+#![allow(dead_code, unused_imports)]
 use std::{env, collections::HashMap};
 // How to read from json file into
 // a struct splited
@@ -15,7 +14,6 @@ use dotenv::dotenv;
 
 use bson::Document;
 
-#[macro_use]
 use repair_manager;
 use rocket::tokio::{fs, self};
 

@@ -27,22 +27,21 @@ mod test {
         let customer = Customer{name:"test_create_customer".to_string(), ..Default::default()};
 
         let resp = client.post::<Customer>(&customer, "/customers".to_string()).await;
-        assert_eq!( resp.status(), Status::Ok);
+        assert_eq!(resp.status(), Status::Ok);
         let asd = resp.into_json::<Document>().await.unwrap();
         let customer_objid = ObjectId::parse_str(asd.get_str("_id").unwrap()).unwrap();
         let filter_ = doc!{"_id": customer_objid};
         let customer = customers_col.find_one(filter_, None).await.unwrap();
+        db.clean().await;
+        _ = customers_col.delete_one(doc!{"_id": customer_objid}, None).await;
         match customer{
             Some(c) =>{
-                db.clean().await;
                 assert!(c.id.unwrap() == customer_objid, "Customer created succesfully")
             },
-            None =>{
-                db.clean().await;
-                assert!(false, "failed to create customer")
-            }
+            None => assert!(false, "failed to create customer")
         }
     }
+
     #[async_test]
     async fn test_create_existing_customer() {
         let mut db = DbFixture::new().await;

@@ -3,6 +3,8 @@ use rocket::serde::Serialize;
 use mongodb::bson::DateTime;
 
 
+
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct User{
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
@@ -14,9 +16,14 @@ pub struct User{
     pub date_joined: DateTime,
     pub password: String,
     pub email: Option<String>,
-    pub old_id: Option<i32>
+    pub old_id: Option<i32>,
+    #[serde(default="default_role")]
+    pub role: String
 }
 
+fn default_role() -> String{
+    "tech".to_string()
+}
 
 
 #[cfg(test)]
