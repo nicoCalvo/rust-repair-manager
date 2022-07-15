@@ -1,4 +1,5 @@
-#[allow(unused_imports, dead_code)]
+#![allow(dead_code)]
+#[allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 
 

@@ -1,31 +1,17 @@
-#[allow(unused_imports)]
-
-use mongodb::bson::oid::ObjectId;
-
+use bson::to_document;
 use mongodb::bson::doc;
-use mongodb::options::FindOneOptions;
-use mongodb::options::FindOptions;
 use rocket::State;
-use rocket::http::ext::IntoCollection;
-use rocket::response::status;
 use rocket::serde::json::Json;
 use serde::{Deserialize, Serialize};
-use rocket::http::Status;
-// use  rocket_contrib::json::Json;
 
 use crate::database;
 use crate::models;
-use crate::models::user::User;
-
 
 use database::db::DbPool;
 use models::customer::Customer;
-
-use rocket::response::status::{Forbidden, };
-
 use super::{request_guards::user::UserRequest};
 
-struct UserId(ObjectId);
+
 
 #[derive(Serialize, Deserialize)]
 pub struct CustomerId{
@@ -34,9 +20,7 @@ pub struct CustomerId{
 
 
 #[derive(Responder)]
-enum ApiError {
-    #[response(status = 403)]
-    Unauthorized(String),
+pub enum ApiError {
     #[response(status = 422)]
     UnprocesableEntity(String),
     #[response(status = 500)]
@@ -44,10 +28,9 @@ enum ApiError {
 }
 
 #[post("/", format="application/json", data="<post_customer>")]
-// pub fn create_customer(custo: Json<Customer>, cookies: &CookieJar<'_>) -> String{
 pub async fn create_customer(
     post_customer: Json<Customer>,
-    user_req: UserRequest,
+    _user_req: UserRequest,
     db: &State<DbPool>
 ) -> Result<Json<CustomerId>, ApiError>{
     // check if customer exists based on name, lastname and address and location
@@ -70,22 +53,72 @@ pub async fn create_customer(
     match customer {
         Ok(c) =>{
             let mut _id = String::new();
-            if c.is_some(){
-                _id = c.unwrap().id.unwrap().to_hex();
+            if let Some(cus) = c{
+                _id = cus.id.unwrap().to_hex();
                 return Err(ApiError::UnprocesableEntity(format!("Customer already exists {}" , _id)))
             }else {
                 let result = customers_col.insert_one(post_customer, None).await.unwrap();
-                
                 _id = result.inserted_id.as_object_id().unwrap().to_hex();
             }
             return Ok(Json(CustomerId{_id}));
         },
-        Err(e) =>{
+        Err(_e) =>{
             return Err(ApiError::InternalError("Unable to retrieve customer".to_string()))
 
         }
     }
-    //if not, create and return Id,
-    //if so, return Id
     // Ok(Json(custo))
+}
+
+
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct UpdateCustomer {
+    #[serde(skip_serializing)]
+    pub id: bson::oid::ObjectId,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub last_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub street: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub number: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub phone: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
+}
+
+
+
+
+
+#[put("/", format="application/json", data="<update_customer>")]
+pub async fn update_customer(
+    update_customer: Json<UpdateCustomer>,
+    _user_req: UserRequest,
+    db: &State<DbPool>
+) -> Result<Json<CustomerId>, ApiError>{
+    let customer = update_customer.into_inner();
+    let customers_col = db.mongo.collection::<Customer>("customers");
+    let doc = doc!{
+        "$set": 
+            to_document(&customer).unwrap()
+    };
+    dbg!(&doc);
+    println!("DOC!:{}", customer.id);
+    match customers_col.update_one(doc!{"_id": customer.id}, doc, None).await{
+        Ok(_) =>{
+            println!("Customer {:?} updated", customer.id);
+            Ok(Json(CustomerId{_id: customer.id.to_hex()}))
+        },
+        Err(e) =>{
+            println!("ERROR! {}", e);
+            Err(ApiError::InternalError("Unable to retrieve customer".to_string()))
+        }
+    }
+
 }

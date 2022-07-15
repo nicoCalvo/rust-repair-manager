@@ -1,38 +1,30 @@
-use std::collections::HashMap;
+#![allow(dead_code)]
 #[allow(unused_imports)]
-#[allow(dead_code)]
+use std::collections::HashMap;
 use std::env;
-use std::option::Iter;
 use std::path::Path;
 use bson::oid::ObjectId;
 use dotenv::dotenv;
 use chrono::prelude::*;
 use bson::{Document, Bson};
-use log::Log;
 use mongodb::{Database, Collection, Client, bson::doc};
 use repair_manager::models::repair::Repair;
-use rocket::Response;
 use ::rocket::local::asynchronous::Client as RocketClient;
 
 use repair_manager::models::customer::Customer;
 use repair_manager::models::repaired_product::RepairedProduct;
-#[macro_use]
 use repair_manager::models::user::User;
 
 
 use repair_manager::utils::hash_password;
-use rocket::http::{Cookie, ContentType, Status, CookieJar};
+use rocket::http::{Cookie, ContentType, Status};
 use rocket::local::asynchronous::LocalResponse;
-use rocket::serde::json::Json;
-use rocket::tokio::{fs::File, io::AsyncReadExt};
 use rocket::tokio::fs;
-use serde::{Deserialize, Serialize};
+use serde::{Serialize};
 
 use rocket::local::asynchronous::Client as RClient;
 
 const FIXTURE_PATH: &str = "tests/fixtures";
-
-
 
 
 
@@ -252,10 +244,10 @@ impl LoggedClient{
         let client = RocketClient::tracked(repair_manager::rocket().await).await.unwrap();
         Self{client, kuki: None}
     }
-        
+
     pub async fn with_admin(&mut self) {
         let mut db = DbFixture::new().await;
-        let admin = db.load_admin().await;
+        let _ = db.load_admin().await;
         let mut creds = HashMap::new();
         creds.insert("email", "matias@arrobatech.com.ar");
         creds.insert("password", "matias9404");
@@ -274,20 +266,31 @@ impl LoggedClient{
     pub async fn post <'a, T>(&self, data: &T, uri: String) -> LocalResponse
     where T:  Serialize
     {   
-        // non-logged users provide falopa token
+        //
+        //`self` escapes the associated function body here
+        //           argument requires that `'1` must outlive `'static`
         let cookie = match self.kuki.as_ref(){
-            Some(c) =>{
-                println!("cookie found!");
-                c.to_owned()
-            },
-            None =>  {
-                println!("cookie not found!");
-                Cookie::new("user_id", "invalid")
-            }
+            Some(c) =>c.to_owned(),
+            None =>  Cookie::new("user_id", "invalid")
         };
         self.client.post(uri)
             .header(ContentType::JSON)
-            .private_cookie(cookie.clone())
+            .private_cookie(cookie)
+            .json(&data)
+            .dispatch()
+            .await
+    
+        }
+    pub async fn put <'a, T>(&self, data: &T, uri: String) -> LocalResponse
+    where T:  Serialize
+    {   
+        let cookie = match self.kuki.as_ref(){
+            Some(c) =>c.to_owned(),
+            None =>  Cookie::new("user_id", "invalid")
+        };
+        self.client.put(uri)
+            .header(ContentType::JSON)
+            .private_cookie(cookie)
             .json(&data)
             .dispatch()
             .await

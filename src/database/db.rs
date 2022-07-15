@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use mongodb::{
     Client, Database, bson::doc,
 };

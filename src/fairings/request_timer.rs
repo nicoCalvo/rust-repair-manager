@@ -1,12 +1,10 @@
-#[allow(unused_imports)]
-use std::io::Cursor;
-use std::sync::atomic::{AtomicUsize, Ordering};
+#![allow(dead_code)]
+
 use std::time::SystemTime;
 use rocket::{debug, error, info};
 
-use rocket::{Request, Data, Response, request};
+use rocket::{Request, Data, Response};
 use rocket::fairing::{Fairing, Info, Kind};
-use rocket::http::{Method, ContentType, Status};
 
 
 

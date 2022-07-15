@@ -19,7 +19,7 @@ mod fairings;
 
 #[launch]
 pub async fn rocket() -> _ {
-    setup_logger();
+    _ = setup_logger();
     info!("YOLO!");
     // aca hacer un get config y ver si es debug o no para setear la url
     let db = connect().await;
@@ -30,6 +30,6 @@ pub async fn rocket() -> _ {
     .mount("/login", routes![apis::login::login])
     .mount("/logout", routes![apis::login::logout])
     .mount("/repairs", routes![apis::repairs::create_repair])
-    .mount("/customers", routes![apis::customers::create_customer]);
+    .mount("/customers", routes![apis::customers::create_customer, apis::customers::update_customer]);
     _rocket
 }

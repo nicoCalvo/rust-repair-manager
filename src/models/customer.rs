@@ -12,7 +12,7 @@ pub struct Customer {
     pub name: String,
     pub last_name: String,
     pub location: String,
-    pub  street: String,
+    pub street: String,
     pub number: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub phone: Option<String>,

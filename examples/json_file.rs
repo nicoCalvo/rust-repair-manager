@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 #[allow(unused_imports)]
 use std::{env, collections::HashMap};
 // How to read from json file into
