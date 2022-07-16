@@ -1,3 +1,4 @@
+use bson::Document;
 use rocket::serde::Deserialize;
 use rocket::serde::Serialize;
 use mongodb::bson::DateTime;
@@ -24,6 +25,21 @@ fn default_role() -> String{
     "tech".to_string()
 }
 
+impl From<Document> for User{
+    fn from(doc: Document) -> Self {
+        User{
+            id: None,
+            username: doc.get("username").unwrap().to_string(),
+            email: Some(doc.get_str("email").unwrap_or("").to_string()),
+            role: doc.get_str("role").unwrap_or("tech").to_string(),
+            date_joined: bson::DateTime::now(),
+            password: doc.get_str("password").unwrap().to_string(),
+            last_login: None,
+            old_id: None,
+            active: true
+            }
+    }
+}
 
 #[cfg(test)]
 mod test{

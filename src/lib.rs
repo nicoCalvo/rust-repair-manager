@@ -20,7 +20,7 @@ mod fairings;
 #[launch]
 pub async fn rocket() -> _ {
     _ = setup_logger();
-    info!("YOLO!");
+    // info!("YOLO!");
     // aca hacer un get config y ver si es debug o no para setear la url
     let db = connect().await;
     let auth_fair = fairings::request_timer::RequestTimer{};
@@ -30,6 +30,7 @@ pub async fn rocket() -> _ {
     .mount("/login", routes![apis::login::login])
     .mount("/logout", routes![apis::login::logout])
     .mount("/repairs", routes![apis::repairs::create_repair])
-    .mount("/customers", routes![apis::customers::create_customer, apis::customers::update_customer]);
+    .mount("/customers", routes![apis::customers::create_customer, apis::customers::update_customer])
+    .mount("/users", routes![apis::users::create_user, apis::users::get_users]);
     _rocket
 }

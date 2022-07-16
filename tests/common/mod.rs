@@ -122,14 +122,14 @@ impl DbFixture{
     
     }
 
-    pub async fn load_admin(&mut self) -> String {
+    pub async fn load_admin(&mut self, email: &str) -> String {
         // guardar los ids de cada collection y dropearlos
         let users_col: Collection<Document> = self.db.collection(&"users");
         let admin = doc! {
             "username": "Matias".to_string(),
             "last_login":  Bson::Null, "date_joined": Utc::now(),
             "password": hash_password(&"matias9404".to_string()),
-            "email": "matias@arrobatech.com.ar".to_string(), "old_id": 1,
+            "email": email.to_string(), "old_id": 1,
             "role": "admin", "active": true
         };
         let res = users_col.insert_one(admin, None).await.unwrap();
@@ -249,11 +249,10 @@ impl LoggedClient{
         Self{client, kuki: None, due_cookie: false}
     }
 
-    pub async fn with_admin(&mut self) {
-        let mut db = DbFixture::new().await;
-        let _ = db.load_admin().await;
+    pub async fn with_admin(&mut self, email: &str, db: &mut DbFixture) {
+        let _ = db.load_admin(email).await;
         let mut creds = HashMap::new();
-        creds.insert("email", "matias@arrobatech.com.ar");
+        creds.insert("email", email);
         creds.insert("password", "matias9404");
         let res = self.client.post("/login")
             .header(ContentType::JSON)
@@ -267,7 +266,7 @@ impl LoggedClient{
 
     }
    
-    pub async fn post <'a, T>(&self, data: &T, uri: String) -> LocalResponse
+    pub async fn post <'a, T>(&'a self, data: &'a T, uri: String) -> LocalResponse
     where T:  Serialize
     {   
         //
@@ -294,8 +293,8 @@ impl LoggedClient{
             .dispatch()
             .await
     
-        }
-    pub async fn put <'a, T>(&self, data: &T, uri: String) -> LocalResponse
+    }
+    pub async fn put <'a, T>(&'a self, data: &'a T, uri: String) -> LocalResponse
     where T:  Serialize
     {   
         let cookie = match self.kuki.as_ref(){
@@ -312,6 +311,24 @@ impl LoggedClient{
             .header(ContentType::JSON)
             .private_cookie(cookie)
             .json(&data)
+            .dispatch()
+            .await
+    
+        }
+    pub async fn get(&self, uri: String) -> LocalResponse{   
+        let cookie = match self.kuki.as_ref(){
+            Some(c) =>c.to_owned(),
+            None =>  {
+                let mut cookie = Cookie::new("user", "invalid");
+                let mut now = OffsetDateTime::now_utc();
+                now += Duration::hours(10);
+                cookie.set_expires(now);
+                cookie
+            }
+        };
+        self.client.get(uri)
+            .header(ContentType::JSON)
+            .private_cookie(cookie)
             .dispatch()
             .await
     

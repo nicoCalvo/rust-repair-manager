@@ -33,6 +33,9 @@ pub struct LoginInfo{
 }
 
 
+// A valid Login injects a private cookie with
+// of type: User: {"id": "some id", "role": "admin"|"tech"}
+// The expiring time is set 10 hours after the login
 #[post("/", format = "application/json", data = "<login_info>")]
 pub async fn login<'r>(
     login_info: Json<LoginInfo>,
@@ -41,8 +44,6 @@ pub async fn login<'r>(
 )-> Result<Json<User>, Forbidden<String>>{
     
     let col_users: Collection<User> = mongo_db.mongo.collection("users");
-    // set max age to 10 hours
-    // check ip origin and add as private attribute http-only
 
     // Return existing session if valid cookie provided
     if let Some(user_cookie) =  cookies.get_private("user"){
