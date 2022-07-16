@@ -62,7 +62,17 @@ mod test {
         let client = LoggedClient::init().await;
         let customer = Customer{name:"test_forbidden_customer".to_string(), ..Default::default()};
         let resp = client.post::<Customer>(&customer, "/customers".to_string()).await;
+        dbg!(&resp);
         assert_eq!(resp.status(), Status::Forbidden);
+    }
+
+    #[async_test]
+    async fn test_due_cookie() {
+        let mut client = LoggedClient::init().await;
+        client.due_cookie = true;
+        let customer = Customer{name:"test_forbidden_customer".to_string(), ..Default::default()};
+        let resp = client.post::<Customer>(&customer, "/customers".to_string()).await;
+        assert_eq!(resp.status(), Status::Forbidden)
     }
 
     #[async_test]

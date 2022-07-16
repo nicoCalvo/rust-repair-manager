@@ -35,7 +35,6 @@ mod test {
         let user_cookie = cookies.get_private("user");
         assert!(user_cookie.is_some());
         let user_cookie = user_cookie.unwrap();
-        dbg!(&user_cookie);
         assert!(user_cookie.http_only().unwrap());
         assert_eq!(resp.status(), Status::Ok);
 

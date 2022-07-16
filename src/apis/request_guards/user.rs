@@ -6,10 +6,11 @@ use bson::oid::ObjectId;
 use mongodb::Collection;
 use rocket::outcome::Outcome::{*, self};
 use rocket::request::{self, Request, FromRequest};
-use rocket::http::Status;
+use rocket::http::{Status, Cookie};
 use rocket::serde::json;
 use rocket::serde::json::Value;
 use rocket::serde::json::json;
+use rocket::time::OffsetDateTime;
 
 use crate::database;
 use crate::models;
@@ -35,16 +36,20 @@ pub enum AuthCookieError {
 }
 
 
+
 #[rocket::async_trait]
 impl<'r> FromRequest<'r> for UserRequest{
     type Error = AuthCookieError;
 
     async fn from_request(request: &'r Request<'_>) -> request::Outcome<Self, Self::Error> {
 
-        let pool = request.rocket().state::<DbPool>().unwrap();
+        let pool: &DbPool = request.rocket().state::<DbPool>().unwrap();
         let users_col: Collection<User> = pool.mongo.collection::<User>("users");
         let user_cookie = request.cookies().get_private("user");
         if let Some(user) = user_cookie {
+            if user.expires_datetime().unwrap() <=  OffsetDateTime::now_utc(){
+                return Outcome::Failure((Status::Forbidden, AuthCookieError::Missing))
+            }
             let user: Value = json::from_str(user.value()).unwrap_or(json!({"id": ""}));
             let id = user["id"].as_str().unwrap();
             match ObjectId::parse_str(id){

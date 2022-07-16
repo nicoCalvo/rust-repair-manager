@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-#[allow(unused_imports)]
+#![allow(unused_imports)]
 use std::collections::HashMap;
 use std::env;
 use std::path::Path;
@@ -19,6 +19,7 @@ use repair_manager::models::user::User;
 use repair_manager::utils::hash_password;
 use rocket::http::{Cookie, ContentType, Status};
 use rocket::local::asynchronous::LocalResponse;
+use rocket::time::{Duration, OffsetDateTime};
 use rocket::tokio::fs;
 use serde::{Serialize};
 
@@ -237,14 +238,15 @@ impl CustomerBuilder{
 
 pub struct LoggedClient{
     client: RClient,
-    kuki: Option<Cookie<'static>>
+    kuki: Option<Cookie<'static>>,
+    pub due_cookie: bool
 }
 
 impl LoggedClient{
 
     pub async fn init() -> Self{
         let client = RocketClient::tracked(repair_manager::rocket().await).await.unwrap();
-        Self{client, kuki: None}
+        Self{client, kuki: None, due_cookie: false}
     }
 
     pub async fn with_admin(&mut self) {
@@ -273,7 +275,17 @@ impl LoggedClient{
         //           argument requires that `'1` must outlive `'static`
         let cookie = match self.kuki.as_ref(){
             Some(c) =>c.to_owned(),
-            None =>  Cookie::new("user", "invalid")
+            None =>  {
+                let mut cookie = Cookie::new("user", "invalid");
+                let mut now = OffsetDateTime::now_utc();
+                if self.due_cookie{
+                    now -= Duration::hours(11);
+                }else{
+                    now += Duration::hours(10);
+                }
+                cookie.set_expires(now);
+                cookie
+            }
         };
         self.client.post(uri)
             .header(ContentType::JSON)
@@ -288,7 +300,13 @@ impl LoggedClient{
     {   
         let cookie = match self.kuki.as_ref(){
             Some(c) =>c.to_owned(),
-            None =>  Cookie::new("user", "invalid")
+            None =>  {
+                let mut cookie = Cookie::new("user", "invalid");
+                let mut now = OffsetDateTime::now_utc();
+                now += Duration::hours(10);
+                cookie.set_expires(now);
+                cookie
+            }
         };
         self.client.put(uri)
             .header(ContentType::JSON)
