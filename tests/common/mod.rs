@@ -87,12 +87,14 @@ impl DbFixture{
                 "username": "Matias".to_string(),
                 "last_login":  Bson::Null, "date_joined": Utc::now(),
                 "password": hash_password(&"matias9404".to_string()),
-                "email": "matias@arrobatech.com.ar".to_string(), "old_id": 1},
+                "email": "matias@arrobatech.com.ar".to_string(), "old_id": 1,
+                "role": "admin", "active": true},
             doc! {
                 "username": "Maxi".to_string(),
                 "last_login":  Bson::Null, "date_joined": Utc::now(),
                 "password": hash_password(&"maxi9404".to_string()),
-                "email": "maxi@arrobatech.com.ar".to_string(), "old_id": 2},
+                "email": "maxi@arrobatech.com.ar".to_string(), "old_id": 2,
+                "role": "admin", "active": true},
             
             ];
         let res = users_col.insert_many(users, None).await.unwrap();
@@ -127,7 +129,7 @@ impl DbFixture{
             "last_login":  Bson::Null, "date_joined": Utc::now(),
             "password": hash_password(&"matias9404".to_string()),
             "email": "matias@arrobatech.com.ar".to_string(), "old_id": 1,
-            "is_admin": true
+            "role": "admin", "active": true
         };
         let res = users_col.insert_one(admin, None).await.unwrap();
         let obj_id = res.inserted_id.as_object_id().unwrap();

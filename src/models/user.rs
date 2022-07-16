@@ -3,8 +3,6 @@ use rocket::serde::Serialize;
 use mongodb::bson::DateTime;
 
 
-
-
 #[derive(Serialize, Deserialize, Debug)]
 pub struct User{
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
@@ -18,7 +16,8 @@ pub struct User{
     pub email: Option<String>,
     pub old_id: Option<i32>,
     #[serde(default="default_role")]
-    pub role: String
+    pub role: String,
+    pub active: bool
 }
 
 fn default_role() -> String{
@@ -37,9 +36,8 @@ mod test{
     fn test_serialize(){
         let user_doc = doc! {
             "username": "pepe".to_string(), "last_login": Bson::Null, "date_joined": Utc::now(),
-            "password": "some_pass".to_string(), "email": "mail@mail.com".to_string(), "old_id": 1};
-        println!("{:?}", &user_doc);
-        // user_doc.set("last_login", None);
+            "password": "some_pass".to_string(), "email": "mail@mail.com".to_string(),
+            "old_id": 1, "active": true};
         let user: User = bson::from_bson::<User>(bson::Bson::Document(user_doc)).unwrap();
         assert_eq!(user.username, "pepe".to_string());
         assert_eq!(user.last_login, None);
