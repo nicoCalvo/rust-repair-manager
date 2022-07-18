@@ -21,7 +21,7 @@ mod test {
     async fn test_create_customer() {
         let mut db = DbFixture::new().await;
         let mut client = LoggedClient::init().await;
-        client.with_admin("test_create_customer", &mut db).await;
+        client.with_user("test_create_customer", &mut db, Some("admin".to_string())).await;
         let customers_col = db.db.collection::<Customer>("customers");
         let customer = Customer{name:"test_create_customer".to_string(), ..Default::default()};
 
@@ -47,7 +47,8 @@ mod test {
         let cus = Customer{name: "existing_customer".to_string(), ..Default::default()};
         let id = db.create_customer(cus).await;
         let mut client = LoggedClient::init().await;
-        client.with_admin("test_create_existing_customer", &mut db).await;
+        client.with_user("test_create_existing_customer", &mut db, Some("admin".to_string())).await;
+
         let customer = Customer{name:"existing_customer".to_string(), ..Default::default()};
         let resp = client.post::<Customer>(&customer, "/customers".to_string()).await;
         assert_eq!(resp.status(), Status::UnprocessableEntity);
@@ -80,7 +81,9 @@ mod test {
         let mut db = DbFixture::new().await;
         let cus = Customer{name: "update_customer".to_string(), ..Default::default()};
         let existing_customer = db.create_customer(cus).await;
-        client.with_admin("test_update_customer", &mut db).await;
+        client.with_user("test_update_customer", &mut db, Some("admin".to_string())).await;
+
+
         let customers_col = db.db.collection::<Customer>("customers");
         let doc = doc!{
             "id": ObjectId::parse_str(existing_customer).unwrap(),

@@ -7,12 +7,11 @@ use bson::{doc, Document};
 pub struct RepairedProduct{
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
     pub id: Option<bson::oid::ObjectId>,
-    pub _type: String,
+    pub product_type: String,
     pub brand: String,
     pub model: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub serial_number: Option<String>,
-    pub created_at: chrono::DateTime<chrono::Utc>
+    pub serial_number: Option<String>
     
 }
 

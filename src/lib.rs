@@ -10,10 +10,11 @@ use database::db::{DbPool, connect};
 mod apis;
 pub mod models;
 
+
 pub mod utils;
 use utils::logger::setup_logger;
-mod fairings;
 
+mod fairings;
 
 
 

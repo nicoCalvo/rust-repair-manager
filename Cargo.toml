@@ -28,5 +28,16 @@ name = "filtered_collection_results"
 [[example]]
 name = "bson"
 
+[[example]]
+name = "ts"
+
+[[example]]
+name = "map_err"
+
+[[example]]
+name = "iter"
+
+
+
 [dev-dependencies]
 serde_json = "1.0.66"

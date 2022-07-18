@@ -122,7 +122,7 @@ impl DbFixture{
     
     }
 
-    pub async fn load_admin(&mut self, email: &str) -> String {
+    pub async fn load_user(&mut self, email: &str, role: Option<String>) -> String {
         // guardar los ids de cada collection y dropearlos
         let users_col: Collection<Document> = self.db.collection(&"users");
         let admin = doc! {
@@ -130,7 +130,7 @@ impl DbFixture{
             "last_login":  Bson::Null, "date_joined": Utc::now(),
             "password": hash_password(&"matias9404".to_string()),
             "email": email.to_string(), "old_id": 1,
-            "role": "admin", "active": true
+            "role": role.unwrap_or("tech".to_string()), "active": true
         };
         let res = users_col.insert_one(admin, None).await.unwrap();
         let obj_id = res.inserted_id.as_object_id().unwrap();
@@ -249,8 +249,8 @@ impl LoggedClient{
         Self{client, kuki: None, due_cookie: false}
     }
 
-    pub async fn with_admin(&mut self, email: &str, db: &mut DbFixture) {
-        let _ = db.load_admin(email).await;
+    pub async fn with_user(&mut self, email: &str, db: &mut DbFixture, role: Option<String>){
+        let _ = db.load_user(email, role).await;
         let mut creds = HashMap::new();
         creds.insert("email", email);
         creds.insert("password", "matias9404");
@@ -263,7 +263,7 @@ impl LoggedClient{
         let kuki = res.cookies().get_private("user").unwrap();
         self.kuki = Some(kuki);
         assert_eq!(res.status(), Status::Ok);
-
+        
     }
    
     pub async fn post <'a, T>(&'a self, data: &'a T, uri: String) -> LocalResponse
