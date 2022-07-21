@@ -6,6 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+anyhow = "1.0.58"
 pbkdf2 = "0.11.0"
 mongodb = "2.2.2"
 rocket =  { version = "0.5.0-rc.2", features = ["secrets", "json"] }
@@ -17,7 +18,7 @@ chrono = { version = "0.4.19", features = ["serde", "rustc-serialize"] }
 rust-crypto = "^0.2"
 log = "0.4"
 fern="0.6.1"
-
+thiserror = "1.0.31"
 
 [[example]]
 name = "json_file"
@@ -37,6 +38,8 @@ name = "map_err"
 [[example]]
 name = "iter"
 
+[[example]]
+name = "more_errors"
 
 
 [dev-dependencies]

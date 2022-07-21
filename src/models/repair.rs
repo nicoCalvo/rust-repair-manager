@@ -64,7 +64,7 @@ pub struct Repair {
     pub voided_date: Option<chrono::DateTime<chrono::Utc>>,
     pub bill: Option<Bill>,
     pub voided: bool,
-    pub old_id: i32,
+    pub repair_id: i32,
     pub received_by: String
     
 }

@@ -20,8 +20,8 @@ use models::user::User;
 
 
 pub struct UserRequest{
-    id: ObjectId,
-    name: String,
+    pub id: ObjectId,
+    pub name: String,
 }
 
 pub struct AdminRequest{

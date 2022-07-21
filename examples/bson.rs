@@ -25,7 +25,7 @@ fn main(){
     
 
     // convert doc to struct
-    let my_doc = doc!{
+    let _my_doc = doc!{
         "name": "yo",
         "last_name": "mismo",
         "location": "none",

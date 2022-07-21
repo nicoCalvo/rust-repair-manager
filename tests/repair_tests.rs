@@ -13,8 +13,8 @@ mod test {
     use bson::{Document, doc, oid::ObjectId};
     use chrono::Utc;
     use mongodb::Collection;
-    use repair_manager::models::repair;
-    use rocket::{tokio, http::ContentType, time::OffsetDateTime};
+    use repair_manager::models::repair::{self, Repair};
+    use rocket::{tokio::{self, io::AsyncReadExt}, http::ContentType, time::OffsetDateTime};
     use ::rocket::{http::Status, async_test};
     use super::Rocket;
     use ::rocket::local::asynchronous::Client;
@@ -45,15 +45,28 @@ mod test {
             "description": "No le anda",
             "additional": "si",
             "suggested_price": 23,
+            "warranty": 6,
             "estimated_fixed_date": Utc::now().date().format("%Y-%m-%d").to_string()
         };
         
         let res = client.post(&repair_request, "/repairs/repair".to_string()).await;
         assert_eq!(res.status(), Status::Ok);
         let res = res.into_json::<Document>().await.unwrap();
+        let repair_id = res.get_object_id("repair_id").unwrap();
+        let customer_id = res.get_object_id("customer_id").unwrap();
+        // aca validar que la repair exista y luego borrarla
+        let repairs_col = db.db.collection::<Repair>("repairs");
+        let created_repair = repairs_col.find_one(doc!{"_id": repair_id}, None).await.unwrap();
+        assert!(created_repair.is_some());
+        let created_repair = created_repair.unwrap();
+        assert_eq!(created_repair.customer, customer_id);
+        assert_eq!(created_repair.product.product_type, "cellphone".to_string());
+        assert_eq!(created_repair.product.brand, "Samsung".to_string());
+        assert_eq!(created_repair.product.model, "asd-123".to_string());
+
         let cus_col = db.db.collection::<Document>("customers");
-        let cus_id = res.get_str("customer_id").unwrap();
-        _ = cus_col.delete_one(doc!{"_id": ObjectId::parse_str(cus_id).unwrap()}, None).await;
+        _ = cus_col.delete_one(doc!{"_id": customer_id}, None).await;
+        _ = repairs_col.delete_one(doc!{"_id": repair_id}, None).await;
         
 
 
