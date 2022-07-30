@@ -15,7 +15,7 @@ mod test {
     use bson::{Document, doc, oid::ObjectId, DateTime};
     use chrono::Utc;
     use mongodb::Collection;
-    use repair_manager::models::repair::{self, Repair};
+    use repair_manager::models::repair::{self, Repair, RepairState};
     use repair_manager::models::customer::{self, Customer};
     use rocket::{tokio::{self, io::AsyncReadExt}, http::ContentType, time::OffsetDateTime};
     use ::rocket::{http::Status, async_test};
@@ -100,10 +100,11 @@ mod test {
         assert_eq!(created_repair.product.product_type, "cellphone".to_string());
         assert_eq!(created_repair.product.brand, "Samsung".to_string());
         assert_eq!(created_repair.product.model, "asd-123".to_string());
+        assert_eq!(created_repair.status, RepairState::Received);
 
         let cus_col = db.db.collection::<Document>("customers");
-        // _ = cus_col.delete_one(doc!{"_id": customer_id}, None).await;
-        // _ = repairs_col.delete_one(doc!{"_id": repair_id}, None).await;
+         _ = cus_col.delete_one(doc!{"_id": customer_id}, None).await;
+        _ = repairs_col.delete_one(doc!{"_id": repair_id}, None).await;
         
 
 
@@ -257,14 +258,14 @@ mod test {
     async fn test_update_repair() {
         let mut db = DbFixture::new().await;
         let mut client = LoggedClient::init().await;
-        let user_id = client.with_user("test_create_repair_new_cus", &mut db, Some("Admin".to_string())).await;
+        let user_id: String = client.with_user("test_create_repair_new_cus", &mut db, Some("Admin".to_string())).await;
         let user_id = ObjectId::from_str(&user_id).unwrap();
         let res = create_dummy_repair(&user_id, &db.db, "cellphone".to_string(),"Recibida".to_string(), &user_id).await;
         let rep_id = res.0;  
         let cus_id = res.1;
         let repair_request = doc!{
             "repair_id": rep_id,
-            "status": "En Progreso",
+            "status": "En progreso",
         };
         let res = client.put(&repair_request, "/repairs/repair".to_string()).await;
         // assert_eq!(res.status(), Status::UnprocessableEntity);

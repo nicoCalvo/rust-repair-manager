@@ -59,7 +59,7 @@ pub struct Repair {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub technician_id: Option<ObjectId>,
     pub logs: Vec<Log>,
-    pub status: String,
+    pub status: RepairState,
     pub  description: String,
     pub additional: String,
     pub suggested_price: i32,
@@ -94,7 +94,7 @@ impl Default for Repair{
             technician: Default::default(),
             technician_id: Default::default(),
             logs: Default::default(),
-            status: "Recibida".to_string(),
+            status: RepairState::Received,
             description: Default::default(),
             additional: Default::default(),
             suggested_price: Default::default(),
@@ -110,5 +110,60 @@ impl Default for Repair{
             voided: Default::default(),
             repair_id: Default::default() 
         }
+    }
+}
+
+
+
+
+#[derive(PartialEq, Serialize, Deserialize, Debug, Clone)]
+pub enum RepairState {
+    Received,
+    InProgress,
+    Delivered,
+    Voided,
+    Budget,
+    Derived,
+    Repaired,
+    NotRepaired
+}
+
+
+impl From<&str> for RepairState{
+    fn from(status: &str) -> Self {
+        match status{
+            "Recibida" => RepairState::Received,
+            "En progreso" => RepairState::InProgress,
+            "Entregada" => RepairState::Delivered,
+            "Anulada" => RepairState::Voided,
+            "Presupuesto" => RepairState::Budget,
+            "Derivada" => RepairState::Derived,
+            "Reparada" => RepairState::Repaired,
+            "Sin Reparar" => RepairState::NotRepaired,
+            _ => unreachable!()
+        }
+    }
+}
+
+impl Into<String> for &RepairState{
+    fn into(self) -> String {
+        match self{
+            RepairState::Received => "Recibida".to_string(),
+            RepairState::InProgress => "En progreso".to_string(),
+            RepairState::Delivered => "Entregada".to_string(),
+            RepairState::Voided => "Anulada".to_string(),
+            RepairState::Budget => "Presupuesto".to_string(),
+            RepairState::Derived => "Derivada".to_string(),
+            RepairState::Repaired => "Reparada".to_string(),
+            RepairState::NotRepaired => "Sin Reparar".to_string()
+        }
+    }
+}
+
+impl Into<String> for RepairState{
+    fn into(self) -> String{
+        let rep_state_ref = &self;
+        let res: String = rep_state_ref.into();
+        res
     }
 }

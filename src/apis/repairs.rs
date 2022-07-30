@@ -4,7 +4,7 @@ use std::str::FromStr;
 use crate::models;
 
 use crate::database;
-use crate::models::repair::Repair;
+use crate::models::repair::{Repair, RepairState};
 use crate::models::repaired_product;
 use crate::utils;
 
@@ -111,58 +111,51 @@ pub struct RepairRequest{
     pub estimated_fixed_date: chrono::NaiveDate,
 }
 
-enum RepairState {
-    Received,
-    InProgress,
-    Delivered,
-    Voided
-}
-
-impl From<&str> for RepairState{
-    fn from(status: &str) -> Self {
-        match status{
-            "Recibida" => RepairState::Received,
-            "En progreso" => RepairState::InProgress,
-            "Entregada" => RepairState::Delivered,
-            "Anulada" => RepairState::Voided,
-            _ => unreachable!()
-        }
-    }
-}
-
-impl Into<String> for RepairState{
-    fn into(self) -> String {
-        match self{
-            RepairState::Received => "Recibida".to_string(),
-            RepairState::InProgress => "En progreso".to_string(),
-            RepairState::Delivered => "Entregada".to_string(),
-            RepairState::Voided => "Anulada".to_string()
-        }
-    }
-}
-
+struct RepairProcessor{}
 trait ProcessRepair {
-    fn to_status(r: &mut Repair, requested_state: &RepairState, user: &UserRequest){
-        let current_status = RepairState::from(r.status.as_str());
-        match current_status{
-            RepairState::Received => _process_received(r, requested_state),
-            RepairState::InProgress => _process_in_progress(r, requested_state, user),
-            RepairState::Delivered => _process_delivered(r, requested_state),
-            RepairState::Voided => _process_voided(r, requested_state)
+    fn to_status(repair: &mut Repair, requested_state: &RepairState, user: &UserRequest)-> bool{
+        match repair.status{
+            RepairState::Received => _process_received(repair, requested_state),
+            RepairState::InProgress => _process_in_progress(repair, requested_state, user),
+            RepairState::Delivered => _process_delivered(repair, requested_state),
+            RepairState::Voided => _process_voided(repair, requested_state),
+            RepairState::Budget => _process_voided(repair, requested_state),
+            RepairState::Derived => _process_voided(repair, requested_state),
+            RepairState::Repaired => _process_voided(repair, requested_state),
+            RepairState::NotRepaired => _process_voided(repair, requested_state)
         }
     }
 }
 
-fn _process_received(repair: &mut Repair, requested_state: &RepairState){
+impl ProcessRepair for RepairProcessor{}
+
+
+fn _process_received(repair: &mut Repair, requested_state: &RepairState)-> bool{
     todo!()
 }
-fn _process_in_progress(repair: &Repair, requested_state: &RepairState, user: &UserRequest){
+fn _process_in_progress(repair: &Repair, requested_state: &RepairState, user: &UserRequest)-> bool{
     // re assignment can only be done by an admin
     // only current technician can add entries to logs and change status (or admin)
-    // if user.role == Role::Admin{
-    if matches!(user.role, Role::Admin){
+    let original_status = &repair.status;
+    if !matches!(user.role, Role::Admin) && user.id != repair.technician_id.unwrap() {
+        println!("User {} attempted to change repair assigned to: {}", user.name, repair.technician.as_ref().unwrap());
+        return false
+    };
+    if ![RepairState::Budget, RepairState::Derived, RepairState::Repaired, RepairState::NotRepaired].contains(requested_state){
+        let state: String = requested_state.into();
+        
+       
+        let repair_status: String = original_status.into();
+        println!("Invalid state requested: {} for in {:?} repair", repair_status, state);
+        return false;
+    };
+    if matches!(RepairState::InProgress, requested_state) && matches!(original_status, requested_state){
+        // only log entry?
+        // aca
+
 
     }
+    return true
     /*
         IN PROGRESS a BUDGET
         IN PROGRESS a DERIVED
@@ -176,11 +169,11 @@ fn _process_in_progress(repair: &Repair, requested_state: &RepairState, user: &U
         and leave the conversion from doc to a struct based on the desired state?
     */
 }
-fn _process_delivered(repair: &Repair, requested_state: &RepairState){
-    todo!()
+fn _process_delivered(repair: &Repair, requested_state: &RepairState)-> bool{
+    false
 }
-fn _process_voided(repair: &Repair, requested_state: &RepairState){
-    todo!()
+fn _process_voided(repair: &Repair, requested_state: &RepairState)-> bool{
+    false
 }
 
 
@@ -264,7 +257,7 @@ async fn  _create_repair(
             technician: None,
             technician_id: None,
             logs: Vec::new(),
-            status: "Recibida".to_string(),
+            status: RepairState::Received,
             description: repair_request.description.to_string(),
             additional: repair_request.additional.to_owned().unwrap(),
             suggested_price: repair_request.suggested_price,
@@ -418,7 +411,7 @@ pub struct UpdateRepairRequest{
     pub repair_id: ObjectId,
     pub warranty: Option<i16>, //default 6 months
     pub suggested_price: Option<i32>,
-    pub status: Option<String>,
+    pub status: String,
     pub bill: Option<String>,
     pub log_entry: Option<String>
 }
@@ -427,25 +420,16 @@ pub struct UpdateRepairRequest{
 #[put("/repair", format = "json", data = "<repair_request>")]
 pub async fn update_repair(
     repair_request: Json<UpdateRepairRequest>,
-    
     user: UserRequest,
     db: &State<DbPool>
 )-> Result<Json<Document>, ApiError>{
     
     let update_repair = repair_request.into_inner();
-    // let requested_status = update_repair.status.clone();
-    dbg!(&update_repair);
+    let status = RepairState::from(update_repair.status.as_str());
 
-    // if let Some(status_str) = requested_status{
-    //     let status = match Status::from_str(&status_str){
-    //         Ok(status)=>status,
-    //         Err(_)=> return Err(ApiError::UnprocesableEntity("Invalid status".to_string()))
-    //     };
-    // }
+    dbg!(&update_repair);
+   
     let reps_col = db.mongo.collection::<Repair>("repairs");
-    println!("#######################################################################");
-    dbg!(&update_repair.repair_id);
-    println!("#######################################################################");
     let repair = match reps_col.find_one(doc!{"_id": update_repair.repair_id}, None).await{
         Ok(res)=>res,
         Err(_e)=> {
@@ -456,8 +440,12 @@ pub async fn update_repair(
     if repair.is_none(){
         return Err(ApiError::UnprocesableEntity("Repair does not exists".to_string()))
     }
-
-    let repair = repair.unwrap();
+   
+    let mut repair = repair.unwrap();
+    if RepairProcessor::to_status(&mut repair, &status, &user){
+        let lol = to_document(&repair).unwrap();
+        return Ok(Json(lol));
+    }
     // si el estado es el mismo, solo se admite uan entrada de log
     // si el estado es distinto, hacer las validaciones de cambio de estado
     // si el

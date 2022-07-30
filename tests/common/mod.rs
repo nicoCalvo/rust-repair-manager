@@ -8,7 +8,7 @@ use dotenv::dotenv;
 use chrono::prelude::*;
 use bson::{Document, Bson};
 use mongodb::{Database, Collection, Client, bson::doc};
-use repair_manager::models::repair::Repair;
+use repair_manager::models::repair::{Repair, RepairState};
 use ::rocket::local::asynchronous::Client as RocketClient;
 
 use repair_manager::models::customer::Customer;
@@ -291,9 +291,9 @@ pub async fn create_dummy_repair(
         technician: Some(technician.to_hex()),
         technician_id: Some(technician.clone()),
         repair_id:1,
+        status: RepairState::from(status.as_str()),
         ..Default::default()
     };
-    dbg!(&repair_request);
     let repairs_col = db.collection::<Repair>("repairs");
     _ = repairs_col.insert_one(repair_request, None).await.unwrap();
     (rep_id, cus_id, prod_id)
