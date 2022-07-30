@@ -21,7 +21,7 @@ mod test {
     #[async_test]
     async fn test_login() {
         let mut db = DbFixture::new().await;
-        db.load_user("test_login@mail.com", Some("admin".to_string())).await;
+        db.load_user("test_login@mail.com", Some("Admin".to_string())).await;
         let client = Client::tracked(repair_manager::rocket().await).await.unwrap();
         let mut map = HashMap::new();
         map.insert("email", "test_login@mail.com");

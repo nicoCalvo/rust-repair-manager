@@ -22,7 +22,7 @@ use rocket::local::asynchronous::LocalResponse;
 use rocket::time::{Duration, OffsetDateTime};
 use rocket::tokio::fs;
 use serde::{Serialize};
-
+use crate::common::Bson::Null;
 use rocket::local::asynchronous::Client as RClient;
 
 const FIXTURE_PATH: &str = "tests/fixtures";
@@ -89,13 +89,13 @@ impl DbFixture{
                 "last_login":  Bson::Null, "date_joined": Utc::now(),
                 "password": hash_password(&"matias9404".to_string()),
                 "email": "matias@arrobatech.com.ar".to_string(), "old_id": 1,
-                "role": "admin", "active": true},
+                "role": "Admin", "active": true},
             doc! {
                 "username": "Maxi".to_string(),
                 "last_login":  Bson::Null, "date_joined": Utc::now(),
                 "password": hash_password(&"maxi9404".to_string()),
                 "email": "maxi@arrobatech.com.ar".to_string(), "old_id": 2,
-                "role": "admin", "active": true},
+                "role": "Admin", "active": true},
             
             ];
         let res = users_col.insert_many(users, None).await.unwrap();
@@ -236,6 +236,72 @@ impl CustomerBuilder{
 }
 
 
+
+
+pub async fn create_dummy_repair(
+    technician: &ObjectId,
+    db: &Database,
+    prod_type: String,
+    status: String,
+    user_id: &ObjectId
+)->(ObjectId, ObjectId, ObjectId){
+    
+    let rep_id = ObjectId::new();
+    let cus_id = ObjectId::new();
+    let prod_id = ObjectId::new();
+    let customer = doc!{
+        "_id": cus_id,
+        "name": cus_id.to_hex(),
+        "last_name": cus_id.to_hex(),
+        "location": "white bay",
+        "street": "avenida siempre viva",
+        "number": "2",
+        "phone": "12345",
+        "email": "si",
+        "products":[doc!{
+            "_id": prod_id,
+            "product_type": prod_type,
+            "brand": "Samsung",
+            "model": "asd-123",
+            "serial_number": "123-dfsdfds"
+            }
+        ]
+    };
+    let cus_col = db.collection::<Document>("customers");
+    let customer_id = match cus_col.insert_one(customer, None).await{
+        Ok(res)=>{
+            res.inserted_id.as_object_id().unwrap()
+        },
+        Err(_e)=> panic!("YOLO!")
+    };
+    let date =Utc::now().format("%Y-%m-%d").to_string();
+    let naive_date = NaiveDate::parse_from_str(&date, "%Y-%m-%d").unwrap();
+    let repair_request = Repair{
+        id: Some(rep_id),
+        received_by:user_id.to_hex(),
+        received_by_id: user_id.clone(),
+        customer:customer_id,
+        product:RepairedProduct{
+            id: Some(prod_id),
+            product_type: "cellphone".to_string(),
+            brand:"Samsung".to_string(),
+            model:"asd-123".to_string(),
+            serial_number: Some("123-dfsdfds".to_string())
+            },
+        technician: Some(technician.to_hex()),
+        technician_id: Some(technician.clone()),
+        repair_id:1,
+        ..Default::default()
+    };
+    dbg!(&repair_request);
+    let repairs_col = db.collection::<Repair>("repairs");
+    _ = repairs_col.insert_one(repair_request, None).await.unwrap();
+    (rep_id, cus_id, prod_id)
+}
+
+// crear una reparacion y devolver id de reparacion y client
+
+
 pub struct LoggedClient{
     client: RClient,
     kuki: Option<Cookie<'static>>,
@@ -249,23 +315,22 @@ impl LoggedClient{
         Self{client, kuki: None, due_cookie: false}
     }
 
-    pub async fn with_user(&mut self, email: &str, db: &mut DbFixture, role: Option<String>){
-        let _ = db.load_user(email, role).await;
+    pub async fn with_user(&mut self, email: &str, db: &mut DbFixture, role: Option<String>) -> String{
+        let user = db.load_user(email, role).await;
         let mut creds = HashMap::new();
         creds.insert("email", email);
         creds.insert("password", "matias9404");
         let res = self.client.post("/login")
             .header(ContentType::JSON)
-            
             .json(&creds)
             .dispatch()
             .await;
         let kuki = res.cookies().get_private("user").unwrap();
         self.kuki = Some(kuki);
         assert_eq!(res.status(), Status::Ok);
-        
+        user
     }
-   
+
     pub async fn post <'a, T>(&'a self, data: &'a T, uri: String) -> LocalResponse
     where T:  Serialize
     {   

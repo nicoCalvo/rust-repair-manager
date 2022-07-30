@@ -1,4 +1,6 @@
 #![allow(dead_code, unused_imports)]
+use std::str::FromStr;
+
 use crate::models;
 
 use crate::database;
@@ -15,6 +17,7 @@ use chrono::NaiveDate;
 use chrono::Utc;
 // use models::repaired_product::RepairedProduct;
 use models::repaired_product::RepairedProduct;
+use models::user::Role;
 use mongodb::Collection;
 use mongodb::Database;
 use mongodb::bson::{Document, doc};
@@ -108,6 +111,77 @@ pub struct RepairRequest{
     pub estimated_fixed_date: chrono::NaiveDate,
 }
 
+enum RepairState {
+    Received,
+    InProgress,
+    Delivered,
+    Voided
+}
+
+impl From<&str> for RepairState{
+    fn from(status: &str) -> Self {
+        match status{
+            "Recibida" => RepairState::Received,
+            "En progreso" => RepairState::InProgress,
+            "Entregada" => RepairState::Delivered,
+            "Anulada" => RepairState::Voided,
+            _ => unreachable!()
+        }
+    }
+}
+
+impl Into<String> for RepairState{
+    fn into(self) -> String {
+        match self{
+            RepairState::Received => "Recibida".to_string(),
+            RepairState::InProgress => "En progreso".to_string(),
+            RepairState::Delivered => "Entregada".to_string(),
+            RepairState::Voided => "Anulada".to_string()
+        }
+    }
+}
+
+trait ProcessRepair {
+    fn to_status(r: &mut Repair, requested_state: &RepairState, user: &UserRequest){
+        let current_status = RepairState::from(r.status.as_str());
+        match current_status{
+            RepairState::Received => _process_received(r, requested_state),
+            RepairState::InProgress => _process_in_progress(r, requested_state, user),
+            RepairState::Delivered => _process_delivered(r, requested_state),
+            RepairState::Voided => _process_voided(r, requested_state)
+        }
+    }
+}
+
+fn _process_received(repair: &mut Repair, requested_state: &RepairState){
+    todo!()
+}
+fn _process_in_progress(repair: &Repair, requested_state: &RepairState, user: &UserRequest){
+    // re assignment can only be done by an admin
+    // only current technician can add entries to logs and change status (or admin)
+    // if user.role == Role::Admin{
+    if matches!(user.role, Role::Admin){
+
+    }
+    /*
+        IN PROGRESS a BUDGET
+        IN PROGRESS a DERIVED
+        IN PROGRESS a REPAIRED
+        IN PROGRESS a NOT_REPAIRED
+
+        else is invalid
+
+        need repair_request to obtain expected field
+        // repair_request could be change into Document
+        and leave the conversion from doc to a struct based on the desired state?
+    */
+}
+fn _process_delivered(repair: &Repair, requested_state: &RepairState){
+    todo!()
+}
+fn _process_voided(repair: &Repair, requested_state: &RepairState){
+    todo!()
+}
 
 
 #[post("/repair", format = "json", data = "<repair_request>")]
@@ -131,7 +205,7 @@ pub async fn create_repair(
             return Err(ApiError::InternalError("unable to restore or create customer".to_string()))
         }
     };
-    let customer_id = customer.id.unwrap();
+    let customer_id: ObjectId = customer.id.unwrap();
     let mut product_request = repair_request.product.clone();
     let product: &RepairedProduct = match create_or_restore_product(&mut customer, &customers_col, &mut product_request).await{
         Ok(prod) => prod,
@@ -139,7 +213,24 @@ pub async fn create_repair(
             return Err(ApiError::InternalError("unable to restore or create customer".to_string()))
         }
     };
-    // let customer_id=customer.clone();
+   
+    let _filter = doc!{
+            "$and":[
+                {"customer": {"$eq":customer_id}},
+                {"product._id": {"$eq": product.id.unwrap()}},
+                {"status": {"$nin": ["Entregada"]}}
+            
+            ]
+        };
+    match repairs_col.find_one(_filter, None).await{
+        Ok(res) =>{
+            if let Some(existing_repair) = res{
+                let msg: String = format!("Product is currently under repair: {}", existing_repair.id.unwrap().to_hex());
+                return Err(ApiError::UnprocesableEntity(msg))
+            }
+        },
+        Err(_e)=> return Err(ApiError::InternalError("unable to create repair".to_string()))
+    };
     match _create_repair(&repairs_col, customer_id, product, &repair_request, &user).await{
         Ok(rep_id) =>{
             println!("repair created!");
@@ -167,9 +258,11 @@ async fn  _create_repair(
         let repair = Repair{
             id: None,
             received_by: user.name.to_string(),
+            received_by_id: user.id,
             customer: customer_id,
             product: product.to_owned(),
             technician: None,
+            technician_id: None,
             logs: Vec::new(),
             status: "Recibida".to_string(),
             description: repair_request.description.to_string(),
@@ -182,9 +275,12 @@ async fn  _create_repair(
             delivered_date: None,
             voided_date: None,
             bill: None,
+            billed_by_id: None,
+            billed_by: None,
             voided: false,
             repair_id: latest_repair + 1, // rename old_id for repair_id
         };
+
         let repair_id: Option<ObjectId> = match repairs_col.insert_one(repair, None).await{
             Ok(res)=>{
                 created = true;
@@ -199,16 +295,12 @@ async fn  _create_repair(
         };
         if let Some(repair_id) = repair_id{
             return Ok(Json(doc!{"repair_id": &repair_id}));
-        }else{};
+        }
     }
     Err(anyhow::anyhow!("Unable to reate repair"))
         
 }
 
-fn fun_name() {
-    ()
-}
-    
 
 
 async fn _get_latest_repair_id(repairs_col: &Collection<Repair>)
@@ -226,7 +318,7 @@ async fn _get_latest_repair_id(repairs_col: &Collection<Repair>)
         None)
         .await?;
     let res = cursor.advance().await?;
-    let mut repair_id: i32 = 1; // default if first repair ever
+    let mut repair_id: i32 = 0; // default if first repair ever
     if res{
         repair_id = cursor.current().get_i32("repair_id").unwrap();
     }
@@ -248,9 +340,10 @@ async fn create_or_restore_customer(customer_col: &Collection<Customer>, custome
     
     let res = customer_col.find_one(_filter.clone(), None).await?;
     if let Some(cus) = res {
-        println!("############CUSTOMER FOUND!!");
+        println!("Creating repair for existing customer");
         Ok(cus)
     }else{
+        println!("Creating repair for new customer");
         _filter.extend(doc!{"repaired_products": []});
         let mut customer: Customer = bson::from_bson::<Customer>(bson::to_bson(&_filter).unwrap()).unwrap();
         let res = customer_col.insert_one(&customer, None).await?;
@@ -263,7 +356,7 @@ async fn create_or_restore_customer(customer_col: &Collection<Customer>, custome
 
 async fn create_or_restore_product<'a>(
     customer: &'a mut Customer,
-    customers_col: &Collection<Customer>,
+    customers_col: &'a Collection<Customer>,
     repaired_product: &'a mut RepairedProduct
 )-> Result<&'a RepairedProduct, Error>{
     let product_res = customer.repaired_products.iter()
@@ -275,6 +368,7 @@ async fn create_or_restore_product<'a>(
     if let Some(prod) = product_res{
         Ok(prod)
     }else{
+        println!("NEW PRODUCT FOR CUSTOMER");
         repaired_product.id = Some(ObjectId::new());
         let update_query = doc!{
             "$push": {
@@ -287,4 +381,170 @@ async fn create_or_restore_product<'a>(
 }
 
 
+// ver que campos son opcionales
+// se agregan lineas de log de a una
 
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct BillRequest{
+    pub amount: i32,
+    pub pay_method: String,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum Status{
+    Received,
+    InProgress,
+    Delivered
+}
+
+impl FromStr for Status {
+
+    type Err = ();
+
+    fn from_str(input: &str) -> Result<Status, Self::Err> {
+        match input {
+            "Recibida"  => Ok(Status::Received),
+            "En Progreso"  => Ok(Status::InProgress),
+            "Entregda"  => Ok(Status::Delivered),
+            _      => Err(()),
+        }
+    }
+}
+
+
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct UpdateRepairRequest{
+    pub repair_id: ObjectId,
+    pub warranty: Option<i16>, //default 6 months
+    pub suggested_price: Option<i32>,
+    pub status: Option<String>,
+    pub bill: Option<String>,
+    pub log_entry: Option<String>
+}
+
+
+#[put("/repair", format = "json", data = "<repair_request>")]
+pub async fn update_repair(
+    repair_request: Json<UpdateRepairRequest>,
+    
+    user: UserRequest,
+    db: &State<DbPool>
+)-> Result<Json<Document>, ApiError>{
+    
+    let update_repair = repair_request.into_inner();
+    // let requested_status = update_repair.status.clone();
+    dbg!(&update_repair);
+
+    // if let Some(status_str) = requested_status{
+    //     let status = match Status::from_str(&status_str){
+    //         Ok(status)=>status,
+    //         Err(_)=> return Err(ApiError::UnprocesableEntity("Invalid status".to_string()))
+    //     };
+    // }
+    let reps_col = db.mongo.collection::<Repair>("repairs");
+    println!("#######################################################################");
+    dbg!(&update_repair.repair_id);
+    println!("#######################################################################");
+    let repair = match reps_col.find_one(doc!{"_id": update_repair.repair_id}, None).await{
+        Ok(res)=>res,
+        Err(_e)=> {
+            dbg!(_e);
+            return Err(ApiError::InternalError("unable to restore repair".to_string()))
+        }
+    };
+    if repair.is_none(){
+        return Err(ApiError::UnprocesableEntity("Repair does not exists".to_string()))
+    }
+
+    let repair = repair.unwrap();
+    // si el estado es el mismo, solo se admite uan entrada de log
+    // si el estado es distinto, hacer las validaciones de cambio de estado
+    // si el
+    // check if voided:
+    dbg!(update_repair);
+    if repair.voided{
+        return Err(ApiError::UnprocesableEntity("Voided repair is inmutable".to_string()))
+    }
+   // hacer una funcion en base al estado actual de la 
+    Ok(Json(doc!{}))
+    /* in progress 
+        allowed transitions:
+            - esperando presupuesto
+            - 
+
+            STATUS_CHOICES = [(RECEIVED, 'Recibida'),
+            (IN_PROGRESS, 'En progreso'),
+            (TO_BE_DELIVERED, 'Para entregar'),
+            (BUDGET, 'Confirmacion presupuesto'),
+            (NOT_REPAIRED, 'Sin reparar'),
+            (REPAIRED, 'Esperando repuesto'),
+            (DELIVERED, 'Entregada'),
+            (DERIVED, 'Derivada'),
+            ]
+        
+            hacer metodos en base al estado actual:
+
+        process_in_progress => incluye estado actua BUDGET, IN PROGRESS, DERIVED
+            transiciones validas:
+                
+               
+                DERIVED a IN PROGRESS
+                BUDGET a IN PROGRESS
+
+        process_received =>
+            RECEIVED a IN PROGRESS
+        process_to_be_delivered=>
+            TO_BE_DELIVERED a DELIVERED
+
+    */
+    
+    // let FINISHED_STATUS = ['a','b'];
+    // if let Some(new_status) = repair_request.status{
+    //     if FINISHED_STATUS.contains(repair.status) && new_status{
+    //         Err(ApiError::UnprocesableEntity("Repair already finished".to_string()))
+    //     }
+    //     if new_status == "Para entregar" && FINISHED_STATUS.contains(repair.status){
+    //         repair.status = "Para entregar".to_string();
+    //         repair.finished_repair = DateTime::now();
+
+    //     }
+    // }else{
+
+    // }
+        
+}
+// async fn _update_repair(repair, update_repair, reps_col, db)->{
+//     todo!()
+// }
+/*
+update:
+    Cambios de estado:
+        * no se puede volver a recibida
+        * solo se puede voidear una ya entregada
+        * recibida - en progreso ------- Finalizada
+                                    |--- Esperando confirmacion presupuesto
+                                    |--- algo mas
+                                    ---- Derivada
+        * No se puede poner precio negativo de precio sugerido
+
+    Finalizacion:
+        * agregar fecha de finalizacion
+    
+    Entrega:
+        * solo en estado "para entregar"
+        * Agregar Bill (precio positivo y forma de pago)
+    
+  
+
+    
+*/
+//     Ok(Json(doc!{"repair_id": repair_request.repair_id}))
+// }
+
+//anulacion en metodo delete
+/*
+Anulacion:
+* Solo las entregadas
+
+*/

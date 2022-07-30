@@ -14,7 +14,7 @@ use crate::models;
 use crate::utils;
 
 use database::db::DbPool;
-use models::user::User;
+use models::user::{User, Role};
 use super::{request_guards::user::AdminRequest};
 use utils::hash_password;
 
@@ -37,7 +37,7 @@ pub struct UserRequest{
     username: String,
     email: Option<String>,
     password: String,
-    role: Option<String>
+    role: Role
 }
 
 
@@ -48,6 +48,7 @@ pub async fn create_user(
     db: &State<DbPool>
 ) -> Result<Json<UserId>, ApiError>{
     // check user does not exists already:
+    
     let mut post_user = post_user.into_inner();
     let users_col = db.mongo.collection::<User>("users");
     let _filter = doc!{

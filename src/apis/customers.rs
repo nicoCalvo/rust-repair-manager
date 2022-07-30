@@ -49,6 +49,7 @@ pub async fn create_customer(
         };
     // cannot apply if collection has been tipified as Customer
     // let opt = FindOneOptions::builder().projection(doc!{"_id": 1}).build();
+  
     let customer = customers_col.find_one(_filter, None).await;
     match customer {
         Ok(c) =>{

@@ -15,3 +15,8 @@ pub struct RepairedProduct{
     
 }
 
+impl Default for RepairedProduct{
+    fn default() -> Self {
+        Self { id: Default::default(), product_type: Default::default(), brand: Default::default(), model: Default::default(), serial_number: Default::default() }
+    }
+}

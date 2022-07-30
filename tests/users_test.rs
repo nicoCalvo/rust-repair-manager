@@ -21,7 +21,7 @@ mod test {
     async fn test_create_existing_user() {
         let mut db = DbFixture::new().await;
         let mut client = LoggedClient::init().await;
-        client.with_user("create_existing_user@email.com", &mut db, Some("admin".to_string())).await;
+        client.with_user("create_existing_user@email.com", &mut db, Some("Admin".to_string())).await;
         let user = doc!{
             "username":"Matias",
             "email": "create_existing_user@email.com",
@@ -38,12 +38,13 @@ mod test {
     async fn test_create_user(){
         let mut db = DbFixture::new().await;
         let mut client = LoggedClient::init().await;
-        client.with_user("admin@mail.com", &mut db, Some("admin".to_string())).await;
+        client.with_user("admin@mail.com", &mut db, Some("Admin".to_string())).await;
         let users_col = db.db.collection::<User>("users");
         let user = doc!{
             "username":"Matias2",
             "email": "matias2@arrobatech.com.ar",
-            "password": "some_pass"
+            "password": "some_pass",
+            "role": "Technician"
 
         };
         let resp = client.post::<Document>(&user, "/users".to_string()).await;
@@ -65,7 +66,7 @@ mod test {
     async fn test_create_user_nonadmin(){
         let mut db = DbFixture::new().await;
         let mut client = LoggedClient::init().await;
-        client.with_user("user@mail.com", &mut db, None).await;
+        client.with_user("user@mail.com", &mut db, Some("Technician".to_string())).await;
         _ = db.db.collection::<User>("users");
         let empty = doc!{};
         let resp = client.post::<Document>(&empty, "/users".to_string()).await;
@@ -76,7 +77,7 @@ mod test {
     async fn test_get_users() {
         let mut client = LoggedClient::init().await;
         let mut db = DbFixture::new().await;
-        client.with_user("test_get_users@email.com", &mut db, Some("admin".to_string())).await;
+        client.with_user("test_get_users@email.com", &mut db, Some("Admin".to_string())).await;
         let resp = client.get("/users".to_string()).await;
         assert_eq!( resp.status(), Status::Ok);
         let asd = resp.into_json::<Vec<Document>>().await.unwrap();

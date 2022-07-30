@@ -16,12 +16,14 @@ use crate::database;
 use crate::models;
 
 use database::db::DbPool;
-use models::user::User;
+use models::user::{User, Role};
+
 
 
 pub struct UserRequest{
     pub id: ObjectId,
     pub name: String,
+    pub role: Role
 }
 
 pub struct AdminRequest{
@@ -56,7 +58,7 @@ impl<'r> FromRequest<'r> for UserRequest{
                 Ok(user) =>{
                     let user_res = users_col.find_one(doc!{"_id": user, "active": true}, None).await.unwrap();
                     if let Some(user_obj) = user_res{
-                        Success(Self{id: user_obj.id.unwrap(), name: user_obj.username})
+                        Success(Self{id: user_obj.id.unwrap(), name: user_obj.username, role: user_obj.role})
                     }
                     else{
                         Outcome::Failure((Status::Forbidden, AuthCookieError::Invalid))
@@ -88,7 +90,7 @@ impl<'r> FromRequest<'r> for AdminRequest{
             let id = user["id"].as_str().unwrap();
             match ObjectId::parse_str(id){
                 Ok(user) =>{
-                    let admin_filter = doc!{"_id": user, "role": "admin", "active": true};
+                    let admin_filter = doc!{"_id": user, "role": "Admin", "active": true};
                     let user_res = users_col.find_one(admin_filter, None).await.unwrap();
                     if let Some(user_obj) = user_res{
                         Success(Self{id: user_obj.id.unwrap(), name: user_obj.username})

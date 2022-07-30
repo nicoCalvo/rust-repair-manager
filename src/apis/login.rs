@@ -34,7 +34,7 @@ pub struct LoginInfo{
 
 
 // A valid Login injects a private cookie with
-// of type: User: {"id": "some id", "role": "admin"|"tech"}
+// of type: User: {"id": "some id", "role": "Admin"|"Technician"}
 // The expiring time is set 10 hours after the login
 #[post("/", format = "application/json", data = "<login_info>")]
 pub async fn login<'r>(
