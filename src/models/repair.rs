@@ -29,10 +29,14 @@ mod date_format{
 }
 
 
+
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Log{
     pub entry: String,
-    pub status: String,
+    #[serde(with = "repair_state")]
+    pub status: RepairState,
+
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub by: String
 }
@@ -59,11 +63,12 @@ pub struct Repair {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub technician_id: Option<ObjectId>,
     pub logs: Vec<Log>,
+    #[serde(with = "repair_state")]
     pub status: RepairState,
-    pub  description: String,
+    pub description: String,
     pub additional: String,
     pub suggested_price: i32,
-    pub warranty: i16,
+    pub warranty: i32,
     pub received_date: chrono::DateTime<chrono::Utc>,
     #[serde(with = "date_format")]
     pub estimated_fixed_date: chrono::NaiveDate,//   "received_date":  bson::Bson::DateTime(DateTime::from(Utc::now())),
@@ -124,8 +129,9 @@ pub enum RepairState {
     Voided,
     Budget,
     Derived,
-    Repaired,
-    NotRepaired
+    ToBeDelivered,
+    NotRepaired,
+    WaitingSpare
 }
 
 
@@ -136,10 +142,11 @@ impl From<&str> for RepairState{
             "En progreso" => RepairState::InProgress,
             "Entregada" => RepairState::Delivered,
             "Anulada" => RepairState::Voided,
-            "Presupuesto" => RepairState::Budget,
+            "Esperando repuesto" => RepairState::WaitingSpare,
+            "Confirmacion presupuesto" => RepairState::Budget,
             "Derivada" => RepairState::Derived,
-            "Reparada" => RepairState::Repaired,
-            "Sin Reparar" => RepairState::NotRepaired,
+            "Para entregar" => RepairState::ToBeDelivered,
+            "Sin reparar" => RepairState::NotRepaired,
             _ => unreachable!()
         }
     }
@@ -152,10 +159,11 @@ impl Into<String> for &RepairState{
             RepairState::InProgress => "En progreso".to_string(),
             RepairState::Delivered => "Entregada".to_string(),
             RepairState::Voided => "Anulada".to_string(),
-            RepairState::Budget => "Presupuesto".to_string(),
+            RepairState::Budget => "Confirmacion presupuesto".to_string(),
             RepairState::Derived => "Derivada".to_string(),
-            RepairState::Repaired => "Reparada".to_string(),
-            RepairState::NotRepaired => "Sin Reparar".to_string()
+            RepairState::ToBeDelivered => "Para entregar".to_string(),
+            RepairState::NotRepaired => "Sin reparar".to_string(),
+            RepairState::WaitingSpare => "Esperando repuesto".to_string()
         }
     }
 }
@@ -165,5 +173,26 @@ impl Into<String> for RepairState{
         let rep_state_ref = &self;
         let res: String = rep_state_ref.into();
         res
+    }
+}
+
+mod repair_state{
+    use super::RepairState;
+    use serde::{Deserialize, Serialize, Serializer, Deserializer};
+    pub fn serialize<S>(status: &RepairState,serializer: S) -> Result<S::Ok, S::Error>
+    where
+    S: Serializer,
+    {   
+        let string_status: String = status.into();
+        serializer.serialize_str(&string_status)
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D,) -> Result<RepairState, D::Error>
+    where
+    D: Deserializer<'de>,
+    {
+        
+        let s = String::deserialize(deserializer)?;
+        Ok(RepairState::from(s.as_str()))
     }
 }

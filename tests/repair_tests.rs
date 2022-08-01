@@ -15,7 +15,7 @@ mod test {
     use bson::{Document, doc, oid::ObjectId, DateTime};
     use chrono::Utc;
     use mongodb::Collection;
-    use repair_manager::models::repair::{self, Repair, RepairState};
+    use repair_manager::models::repair::{self, Repair, RepairState, Log};
     use repair_manager::models::customer::{self, Customer};
     use rocket::{tokio::{self, io::AsyncReadExt}, http::ContentType, time::OffsetDateTime};
     use ::rocket::{http::Status, async_test};
@@ -258,17 +258,56 @@ mod test {
     async fn test_update_repair() {
         let mut db = DbFixture::new().await;
         let mut client = LoggedClient::init().await;
-        let user_id: String = client.with_user("test_create_repair_new_cus", &mut db, Some("Admin".to_string())).await;
+        let user_id: String = client.with_user("test_update_repair", &mut db, Some("Admin".to_string())).await;
         let user_id = ObjectId::from_str(&user_id).unwrap();
-        let res = create_dummy_repair(&user_id, &db.db, "cellphone".to_string(),"Recibida".to_string(), &user_id).await;
+        
+        // test unexistent repair
+        let repair_request = doc!{
+            "repair_id": ObjectId::new(),
+            "status": "En progreso",
+            "log_entry": "yolo"
+        };
+        let res = client.put(&repair_request, "/repairs/repair".to_string()).await;
+        assert_eq!(res.status(), Status::NotFound);
+
+        // test Received repair into progress
+        let log_entry = Log{ entry: "Recibida".to_string(), status: RepairState::Received, created_at: Utc::now(), by: "Someone".to_string()};
+        let res = create_dummy_repair(&user_id, &db.db, "cellphone".to_string(),"Recibida".to_string(), &user_id, log_entry).await;
         let rep_id = res.0;  
         let cus_id = res.1;
         let repair_request = doc!{
             "repair_id": rep_id,
             "status": "En progreso",
+            "log_entry": "working on it"
+        };
+        let resp = client.put(&repair_request, "/repairs/repair".to_string()).await;
+        assert_eq!(resp.status(), Status::Ok);
+
+        let repair_request = doc!{
+            "repair_id": rep_id,
+            "status": "Para entregar",
+            "log_entry": "se cambio pitutito",
+            "suggested_price": 4343,
+            "warranty": 12
         };
         let res = client.put(&repair_request, "/repairs/repair".to_string()).await;
-        // assert_eq!(res.status(), Status::UnprocessableEntity);
-        dbg!(res.into_string().await);
+
+        let repair_request = doc!{
+            "repair_id": rep_id,
+            "status": "Entregada",
+            "bill":{
+                "amount": 3456,
+                "pay_method": "credit"
+            }
+        };
+        let res = client.put(&repair_request, "/repairs/repair".to_string()).await;
+
+
+        let reps_col = db.db.collection::<Repair>("repairs");
+        let cus_col = db.db.collection::<Document>("customers");
+        // let repair = reps_col.find_one(doc!{"_id": rep_id}, None).await.unwrap().unwrap();
+        // dbg!(repair);
+        _ = reps_col.delete_one(doc!{"_id": rep_id}, None).await;
+        _ = cus_col.delete_one(doc!{"_id": cus_id}, None).await;
     }
 }

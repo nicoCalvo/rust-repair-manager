@@ -26,7 +26,7 @@ mod test {
             "username":"Matias",
             "email": "create_existing_user@email.com",
             "password": "some_pass",
-            "role": "admin"
+            "role": "Admin"
 
         };
         let resp = client.post::<Document>(&user, "/users".to_string()).await;

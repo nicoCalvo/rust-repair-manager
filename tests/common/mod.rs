@@ -8,7 +8,7 @@ use dotenv::dotenv;
 use chrono::prelude::*;
 use bson::{Document, Bson};
 use mongodb::{Database, Collection, Client, bson::doc};
-use repair_manager::models::repair::{Repair, RepairState};
+use repair_manager::models::repair::{Repair, RepairState, Log};
 use ::rocket::local::asynchronous::Client as RocketClient;
 
 use repair_manager::models::customer::Customer;
@@ -243,7 +243,8 @@ pub async fn create_dummy_repair(
     db: &Database,
     prod_type: String,
     status: String,
-    user_id: &ObjectId
+    user_id: &ObjectId,
+    log_entry: Log
 )->(ObjectId, ObjectId, ObjectId){
     
     let rep_id = ObjectId::new();
@@ -275,7 +276,9 @@ pub async fn create_dummy_repair(
         Err(_e)=> panic!("YOLO!")
     };
     let date =Utc::now().format("%Y-%m-%d").to_string();
-    let naive_date = NaiveDate::parse_from_str(&date, "%Y-%m-%d").unwrap();
+    // let naive_date = NaiveDate::parse_from_str(&date, "%Y-%m-%d").unwrap();
+    let mut logs: Vec<Log> = Vec::new();
+    logs.push(log_entry);
     let repair_request = Repair{
         id: Some(rep_id),
         received_by:user_id.to_hex(),
@@ -291,6 +294,7 @@ pub async fn create_dummy_repair(
         technician: Some(technician.to_hex()),
         technician_id: Some(technician.clone()),
         repair_id:1,
+        logs: logs,
         status: RepairState::from(status.as_str()),
         ..Default::default()
     };
