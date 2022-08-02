@@ -79,7 +79,7 @@ trait ProcessRepair {
             RepairState::InProgress => _process_in_progress(repair, requested_state, user, update_repair),
             RepairState::Budget | RepairState::Derived | RepairState::WaitingSpare => _process_during_repair(repair, requested_state),
             RepairState::ToBeDelivered | RepairState::NotRepaired => _process_repaired(repair, requested_state, user, update_repair),
-            RepairState::Delivered => _process_delivered(repair, requested_state),
+            RepairState::Delivered => _process_delivered(repair, requested_state, user, update_repair),
             RepairState::Voided => {
                 error!("Attempt to modify voided repair {} by {}", repair.id.unwrap().to_hex(), user.name);
                 return Err(anyhow::anyhow!("Cannot modify voided repair"))
@@ -171,8 +171,10 @@ fn _process_in_progress(repair: &Repair, requested_state: RepairState, user: &Us
     }else if matches!(requested_state, RepairState::ToBeDelivered){
         let new_log = Log{ entry: log_entry, status: requested_state, created_at: Utc::now(), by: user.name.clone() };
         let new_log_as_doc =  to_document(&new_log).unwrap();
-        return Ok(doc!{"$push": {
-            "logs": new_log_as_doc},
+        return Ok(doc!{
+            "$push": {
+                "logs": new_log_as_doc
+            },
             "$set":{
                 "status": requested_state_str,
                 "suggested_price": update_repair.suggested_price.unwrap_or(0),
@@ -197,9 +199,29 @@ fn _process_in_progress(repair: &Repair, requested_state: RepairState, user: &Us
     }
 }
 
-fn _process_delivered(repair: &Repair, requested_state: RepairState)->  Result<Document, anyhow::Error>{
+fn _process_delivered(repair: &Repair, requested_state: RepairState,  user: &UserRequest, update_repair: &UpdateRepairRequest)->  Result<Document, anyhow::Error>{
     // can only be moved into "Voided" status
-    todo!()
+    let original_status = &repair.status;
+    let requested_state_str: String = requested_state.clone().into();
+    let repair_status: String = original_status.into();
+    if !matches!(requested_state, RepairState::Voided){
+        return Err(anyhow::anyhow!("Invalid state requested: current: {} - desired: {}", &repair_status, requested_state_str));
+    };
+    let log_entry = update_repair.log_entry.as_ref().unwrap_or(&requested_state_str).to_owned();
+
+    let new_log = Log{ entry: log_entry, status: requested_state, created_at: Utc::now(), by: user.name.clone() };
+    let new_log_as_doc =  to_document(&new_log).unwrap();
+    return Ok(doc!{
+        "$push": {
+            "logs": new_log_as_doc,
+        },
+        "$set": {
+            "status":requested_state_str.clone(),
+            "voided": true,
+            "voided_date": Utc::now().date().format("%Y-%m-%d").to_string()
+
+        }
+        })
 
 }
 fn _process_during_repair(repair: &Repair, requested_state: RepairState)->  Result<Document, anyhow::Error>{

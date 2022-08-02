@@ -295,6 +295,7 @@ pub async fn create_dummy_repair(
         technician_id: Some(technician.clone()),
         repair_id:1,
         logs: logs,
+        description: "no le anda".to_string(),
         status: RepairState::from(status.as_str()),
         ..Default::default()
     };

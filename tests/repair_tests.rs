@@ -301,6 +301,14 @@ mod test {
             }
         };
         let res = client.put(&repair_request, "/repairs/repair".to_string()).await;
+        assert_eq!(resp.status(), Status::Ok);
+
+        let repair_request = doc!{
+            "repair_id": rep_id,
+            "status": "Anulada",
+        };
+        let res = client.put(&repair_request, "/repairs/repair".to_string()).await;
+        assert_eq!(resp.status(), Status::Ok);
 
 
         let reps_col = db.db.collection::<Repair>("repairs");
