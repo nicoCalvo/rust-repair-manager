@@ -1,5 +1,6 @@
 #![allow(dead_code, unused_imports)]
 
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use bson::{doc, Document};
 
@@ -11,12 +12,19 @@ pub struct RepairedProduct{
     pub brand: String,
     pub model: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub serial_number: Option<String>
-    
+    pub serial_number: Option<String>,
+    pub created_at: chrono::DateTime<chrono::Utc>
 }
 
 impl Default for RepairedProduct{
     fn default() -> Self {
-        Self { id: Default::default(), product_type: Default::default(), brand: Default::default(), model: Default::default(), serial_number: Default::default() }
+        Self { 
+            id: Default::default(),
+            product_type: Default::default(),
+            brand: Default::default(), model:
+            Default::default(),
+            serial_number: Default::default(),
+            created_at: Utc::now()
+        }
     }
 }

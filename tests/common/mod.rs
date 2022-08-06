@@ -289,7 +289,8 @@ pub async fn create_dummy_repair(
             product_type: "cellphone".to_string(),
             brand:"Samsung".to_string(),
             model:"asd-123".to_string(),
-            serial_number: Some("123-dfsdfds".to_string())
+            serial_number: Some("123-dfsdfds".to_string()),
+            created_at: Utc::now()
             },
         technician: Some(technician.to_hex()),
         technician_id: Some(technician.clone()),

@@ -36,7 +36,6 @@ pub struct Log{
     pub entry: String,
     #[serde(with = "repair_state")]
     pub status: RepairState,
-
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub by: String
 }
@@ -121,7 +120,7 @@ impl Default for Repair{
 
 
 
-#[derive(PartialEq, Serialize, Deserialize, Debug, Clone)]
+#[derive(PartialEq, Serialize, Deserialize, Debug, Clone, FromFormField)]
 pub enum RepairState {
     Received,
     InProgress,
@@ -175,6 +174,8 @@ impl Into<String> for RepairState{
         res
     }
 }
+
+
 
 mod repair_state{
     use super::RepairState;

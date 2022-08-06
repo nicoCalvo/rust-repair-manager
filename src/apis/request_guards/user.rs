@@ -19,7 +19,7 @@ use database::db::DbPool;
 use models::user::{User, Role};
 
 
-
+#[derive(Debug)]
 pub struct UserRequest{
     pub id: ObjectId,
     pub name: String,

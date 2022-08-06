@@ -10,6 +10,7 @@ use crate::utils;
 
 use bson::oid::ObjectId;
 use bson::to_document;
+use chrono::NaiveDate;
 use chrono::Utc;
 // use models::repaired_product::RepairedProduct;
 use models::repaired_product::RepairedProduct;
@@ -17,6 +18,8 @@ use models::user::Role;
 use mongodb::Collection;
 use mongodb::bson::{Document, doc};
 use mongodb::error::Error;
+use rocket::http::uri::Query;
+use rocket::request::FromParam;
 use utils::date_format;
 
 
@@ -30,6 +33,7 @@ use models::customer::Customer;
 use super::request_guards::user::UserRequest;
 
 const MAX_RETRIES: i32 = 10;
+const FORMAT: &'static str = "%Y-%m-%d";
 
 #[derive(Responder)]
 pub enum ApiError {
@@ -485,26 +489,209 @@ pub async fn update_repair(
   
         
 }
-/*
-update:
-    Cambios de estado:
-        * no se puede volver a recibida
-        * solo se puede voidear una ya entregada
-        * recibida - en progreso ------- Finalizada
-                                    |--- Esperando confirmacion presupuesto
-                                    |--- algo mas
-                                    ---- Derivada
-        * No se puede poner precio negativo de precio sugerido
 
-    Finalizacion:
-        * agregar fecha de finalizacion
+
+
+#[get("/repair/<id>", rank = 2)]
+pub async fn repair_string(id: String , user: UserRequest, db: &State<DbPool>)-> Result<Json<Document>, ApiError>{
+    let repairs_col = db.mongo.collection::<Repair>("repairs");
+    let _id =  match ObjectId::parse_str(&id){
+        Ok(id) => id,
+        Err(_) => return Err(ApiError::NotFound(Default::default()))
+    };
+    let match_id = doc!{
+        "$match":{"_id":_id}
+        };
+    let customer_info = doc!{
+            "$lookup":{
+                "from": "customers",
+                "localField": "customer",
+                "foreignField": "_id",
+                "pipeline":[
+                    {
+                        "$project": {"products": 0}
+                    }
+                ],
+                "as": "customer_info"
+                    
+            }
+        };
     
-    Entrega:
-        * solo en estado "para entregar"
-        * Agregar Bill (precio positivo y forma de pago)
-    
+    match repairs_col.aggregate([match_id, customer_info], None).await{
+        Ok(mut cursor) => {
+            let res = cursor.advance().await.unwrap();
+            if !res{
+                info!("Repair {:?} not found", _id);
+                return Err(ApiError::NotFound(Default::default()))
+            }else{
+                let repair = cursor.deserialize_current().unwrap();
+                return Ok(Json(repair));
+            }
+        },
+        Err(e)=>{
+            error!("Unable to restore repair: {:?}", id);
+            return Err(ApiError::UnprocesableEntity(format!("Unable to restore repair: {:?}", e)))
+        }
+    }
+}
 
-Anulacion:
-* Solo las entregadas
 
-*/
+#[get("/repair/<id>")]
+pub async fn repair_int(id: i32, user: UserRequest, db: &State<DbPool>)-> Result<Json<Document>, ApiError>{
+    let repairs_col = db.mongo.collection::<Repair>("repairs");
+    let match_id = doc!{
+        "$match":{"repair_id": &id}
+        };
+    let customer_info = doc!{
+            "$lookup":{
+                "from": "customers",
+                "localField": "customer",
+                "foreignField": "_id",
+                "pipeline":[
+                    {
+                        "$project": {"products": 0}
+                    }
+                ],
+                "as": "customer_info"
+                    
+            }
+        };
+    match repairs_col.aggregate([match_id, customer_info], None).await{
+        Ok(mut cursor) => {
+            let res = cursor.advance().await.unwrap();
+            if !res{
+                info!("Repair {:?} not found", &id);
+                return Err(ApiError::NotFound(Default::default()))
+            }else{
+                let repair = cursor.deserialize_current().unwrap();
+                return Ok(Json(repair));
+            }
+        },
+        Err(e)=>{
+            error!("Unable to restore repair: {:?}", &id);
+            return Err(ApiError::UnprocesableEntity(format!("Unable to restore repair: {:?}", e)))
+        }
+    }
+}
+
+
+
+#[derive(Debug, PartialEq, FromFormField)]
+pub enum VoidedState{
+    True,
+    False
+}
+
+
+#[derive(Debug, PartialEq, FromFormField)]
+pub enum SortField{
+    status,
+    technician,
+    estimatedFixedDate,
+    deliveredDate
+}
+impl ToString for SortField{
+    fn to_string(&self) -> String {
+        match self{
+            SortField::status => "status".to_string(),
+            SortField::technician => "technician".to_string(),
+            SortField::estimatedFixedDate => "estimated_fixed_date".to_string(),
+            SortField::deliveredDate => "delivered_date".to_string(),
+        }
+    }
+}
+
+
+#[derive(Debug, PartialEq, FromFormField)]
+pub enum SortOrd{
+    asc,
+    desc,
+}
+
+
+#[get("/catalog?<technician>&<repair_state>&<est_fix_date>&<received_date>&<voided>&<sort_field>&<sort_ord>")]
+pub async fn catalog(
+    technician: Option<&str>,
+    repair_state: Vec<RepairState>,
+    est_fix_date: Option<&str>,
+    received_date: Option<&str>,
+    voided: Option<VoidedState>,
+    sort_field: Option<SortField>,
+    sort_ord: Option<SortOrd>,
+    user: UserRequest,
+    db: &State<DbPool>
+) -> Result<Json<Vec<Document>>, ApiError>{
+    dbg!(&sort_field);
+    let repairs_col = db.mongo.collection::<Repair>("repairs");
+
+    let repair_state_filter = doc!{"status": {"$in": repair_state.into_iter().map(move |s|->String{RepairState::into(s)}).collect::<Vec<String>>()}};
+    let technician_filter = match technician{
+        Some(tech)=> doc!{"technician": {"$eq": tech}},
+        None => doc!{}
+    };
+    let today =Utc::now().date().to_string();
+    let mut parsed_est_fixed_date_filter = doc!{};
+    if let Some(est_fix_date) = est_fix_date{
+        parsed_est_fixed_date_filter = match NaiveDate::parse_from_str(&est_fix_date, FORMAT){
+            Ok(parsed) => doc!{"estimated_fixed_date": {"$gte": est_fix_date.to_string()}},
+            Err(e)=> return Err(ApiError::UnprocesableEntity(format!("Invalid estimated fixed date format: {:?}", e)))
+        };
+    };
+    let mut parsed_received_date = doc!{};
+    if let Some(rec_date) = received_date{
+        parsed_received_date = match NaiveDate::parse_from_str(rec_date, "%Y-%m-%d"){
+            Ok(date) => doc!{"received_date": {"$gte": rec_date}},
+            Err(e) => return Err(ApiError::UnprocesableEntity(format!("Invalid date format: {:?}", e)))
+        };
+    }
+    // let voided_filter = doc!{"voided": voided.is_some() && voided.unwrap() == VoidedState::True};
+    let filter_condition = doc!{
+        "$and":[
+            technician_filter,
+            repair_state_filter,
+            parsed_est_fixed_date_filter,
+            parsed_received_date,
+            // voided_filter
+        ]
+    };
+    let sort_condition = match sort_field{
+        Some(field)=>{
+            doc!{
+                "$sort": {field.to_string(): 1}
+            }
+        },
+        None => doc!{}
+           
+    };
+    let customer_info = doc!{
+            "$lookup":{
+                "from": "customers",
+                "localField": "customer",
+                "foreignField": "_id",
+                "pipeline":[
+                    {
+                        "$project": {"products": 0}
+                    }
+                ],
+                "as": "customer_info"
+                    
+            }
+        };
+    let project = doc!{"$project": {"status": 1, "_id": 0}};
+    // let asd = [ doc!{"$match": &filter_condition}, customer_info.clone(), sort_condition.clone(), project.clone()];
+    // info!("{:?}", asd);
+    match repairs_col.aggregate([ doc!{"$match": filter_condition}, customer_info, project ], None).await{
+        Ok(mut cursor) => {
+            let mut results: Vec<Document> = Vec::new();
+            while cursor.advance().await.unwrap(){
+                results.push(cursor.deserialize_current().unwrap())
+            }
+            return Ok(Json(results));
+        },
+        Err(e)=>{
+            dbg!(&e);
+            error!("Unable to restore repairs");
+            return Err(ApiError::UnprocesableEntity(format!("Unable to restore repairs: {:?}", e)))
+        }
+    }
+}

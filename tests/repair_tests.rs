@@ -1,4 +1,4 @@
-#![allow(dead_code)]
+#![allow(dead_code, unused_variables)]
 #![allow(unused_imports)]
 use rocket::{Rocket, State, Build};
 use rocket::fairing::AdHoc;
@@ -313,9 +313,49 @@ mod test {
 
         let reps_col = db.db.collection::<Repair>("repairs");
         let cus_col = db.db.collection::<Document>("customers");
-        // let repair = reps_col.find_one(doc!{"_id": rep_id}, None).await.unwrap().unwrap();
-        // dbg!(repair);
         _ = reps_col.delete_one(doc!{"_id": rep_id}, None).await;
         _ = cus_col.delete_one(doc!{"_id": cus_id}, None).await;
     }
-}
+
+
+    #[async_test]
+    async fn test_get_repair() {
+        let mut db = DbFixture::new().await;
+        let mut client = LoggedClient::init().await;
+        let user_id: String = client.with_user("test_update_repair", &mut db, Some("Admin".to_string())).await;
+        let user_id = ObjectId::from_str(&user_id).unwrap();
+        let log_entry = Log{ entry: "Recibida".to_string(), status: RepairState::Received, created_at: Utc::now(), by: "Someone".to_string()};
+        let res = create_dummy_repair(&user_id, &db.db, "cellphone".to_string(),"Recibida".to_string(), &user_id, log_entry).await;
+        let rep_id = res.0;  
+        let cus_id = res.1;
+    
+        let res = client.get(format!("/repairs/repair/{}", rep_id).to_string()).await;
+        assert_eq!(res.status(), Status::Ok);
+
+        let res = client.get(format!("/repairs/repair/{}", "62ec72bc72a64b75c8719eaf").to_string()).await;
+        assert_eq!(res.status(), Status::NotFound);
+
+        let res = client.get(format!("/repairs/repair/{}", 1).to_string()).await;
+        assert_eq!(res.status(), Status::Ok);
+        let reps_col = db.db.collection::<Repair>("repairs");
+        _ = reps_col.delete_one(doc!{"_id": rep_id}, None).await;
+
+         
+    }
+    #[async_test]
+    async fn test_get_catalog_repair() {
+        let mut db = DbFixture::new().await;
+        let mut client = LoggedClient::init().await;
+        let user_id: String = client.with_user("test_update_repair", &mut db, Some("Admin".to_string())).await;
+        let user_id = ObjectId::from_str(&user_id).unwrap();
+        let technician = ObjectId::new();
+        let log_entry = Log{ entry: "Recibida".to_string(), status: RepairState::Received, created_at: Utc::now(), by: "Someone".to_string()};
+        let res = create_dummy_repair(&technician, &db.db, "cellphone".to_string(),"Recibida".to_string(), &user_id, log_entry).await;
+        let rep_id = res.0;  
+        let cus_id = res.1;
+        // let res = client.get(format!("/repairs/catalog?technician={}&repair_state=Recibida&est_fix_date=2022-08-05", "62edad7ee8168d33191cf13b").to_string()).await;
+        let res = client.get("/repairs/catalog?repair_state=Received&repair_state=Voided&sort_field=estimatedFixedDate".to_string()).await;
+        // assert_eq!(res.status(), Status::Ok);
+        dbg!(&res.into_string().await);
+    }
+}   

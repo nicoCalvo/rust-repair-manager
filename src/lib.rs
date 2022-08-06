@@ -30,7 +30,12 @@ pub async fn rocket() -> _ {
     .attach(auth_fair)
     .mount("/login", routes![apis::login::login])
     .mount("/logout", routes![apis::login::logout])
-    .mount("/repairs", routes![apis::repairs::create_repair, apis::repairs::update_repair])
+    .mount("/repairs", routes![
+        apis::repairs::create_repair,
+        apis::repairs::update_repair,
+        apis::repairs::repair_string,
+        apis::repairs::repair_int,
+        apis::repairs::catalog])
     .mount("/customers", routes![apis::customers::create_customer, apis::customers::update_customer])
     .mount("/users", routes![apis::users::create_user, apis::users::get_users]);
     _rocket
