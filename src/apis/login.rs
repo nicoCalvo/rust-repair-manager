@@ -39,7 +39,6 @@ pub async fn login<'r>(
     cookies: &CookieJar<'_>,
     mongo_db: &State<DbPool>,
 )-> Result<Json<User>, Forbidden<String>>{
-    
     let col_users: Collection<User> = mongo_db.mongo.collection("users");
 
     // Return existing session if valid cookie provided
@@ -48,6 +47,7 @@ pub async fn login<'r>(
         let id = user_cookie["id"].as_str().unwrap();
         let user = col_users.find_one(doc!{"_id": ObjectId::parse_str(id).unwrap()}, None).await.unwrap();
         match user{
+
             Some(mut u) =>{
                 let user_cookie_info = json!({
                     "id": u.id.unwrap().to_string(),
@@ -90,6 +90,7 @@ pub async fn login<'r>(
                 user_cookie.set_expires(now);
                 cookies.add_private(user_cookie);
                 info!("User {} has logged in", user.username);
+                user.password="***".to_string();
                 return Ok(Json(user));
             }
         },
