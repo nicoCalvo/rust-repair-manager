@@ -677,10 +677,8 @@ pub async fn catalog(
                     
             }
         };
-    let project = doc!{"$project": {"status": 1, "_id": 0}};
-    // let asd = [ doc!{"$match": &filter_condition}, customer_info.clone(), sort_condition.clone(), project.clone()];
-    // info!("{:?}", asd);
-    match repairs_col.aggregate([ doc!{"$match": filter_condition}, customer_info, project ], None).await{
+    // let project = doc!{"$project": {"status": 1, "_id": 1}};
+    match repairs_col.aggregate([ doc!{"$match": filter_condition}, customer_info ], None).await{
         Ok(mut cursor) => {
             let mut results: Vec<Document> = Vec::new();
             while cursor.advance().await.unwrap(){

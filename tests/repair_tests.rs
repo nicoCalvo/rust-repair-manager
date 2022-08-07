@@ -358,4 +358,21 @@ mod test {
         // assert_eq!(res.status(), Status::Ok);
         dbg!(&res.into_string().await);
     }
+    // #[async_test]
+    // async fn test_get_catalog_repair() {
+    //     let mut db = DbFixture::new().await;
+    //     let mut client = LoggedClient::init().await;
+    //     let user_id: String = client.with_user("test_update_repair", &mut db, Some("Admin".to_string())).await;
+    //     let user_id = ObjectId::from_str(&user_id).unwrap();
+    //     let technician = ObjectId::new();
+    //     let log_entry = Log{ entry: "Recibida".to_string(), status: RepairState::Received, created_at: Utc::now(), by: "Someone".to_string()};
+    //     let res = create_dummy_repair(&technician, &db.db, "cellphone".to_string(),"Recibida".to_string(), &user_id, log_entry).await;
+    //     let rep_id = res.0;  
+    //     let cus_id = res.1;
+    //     // let res = client.get(format!("/repairs/catalog?technician={}&repair_state=Recibida&est_fix_date=2022-08-05", "62edad7ee8168d33191cf13b").to_string()).await;
+    //     let res = client.get("/repairs/catalog?repair_state=Received&repair_state=Voided&sort_field=estimatedFixedDate".to_string()).await;
+    //     // assert_eq!(res.status(), Status::Ok);
+    //     dbg!(&res.into_string().await);
+    // }
+
 }   

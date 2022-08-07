@@ -1,6 +1,3 @@
-#![allow(unused_imports)]
-
-use futures::io::Cursor;
 use mongodb::bson::oid::ObjectId;
 
 use mongodb::Collection;
@@ -14,7 +11,7 @@ use rocket::{State};
 use rocket::serde::json::Value;
 
 use crate::database;
-use crate::models::{self, user};
+use crate::models;
 use crate::utils;
 
 use utils::hash_password;
@@ -90,6 +87,7 @@ pub async fn login<'r>(
                 now += Duration::hours(10);
                 user_cookie.set_expires(now);
                 cookies.add_private(user_cookie);
+                info!("User {} has logged in", user.username);
                 return Ok(Json(user));
             }
         },
