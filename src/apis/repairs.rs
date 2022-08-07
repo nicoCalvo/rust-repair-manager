@@ -621,7 +621,6 @@ pub async fn catalog(
     user: UserRequest,
     db: &State<DbPool>
 ) -> Result<Json<Vec<Document>>, ApiError>{
-    dbg!(&sort_field);
     let repairs_col = db.mongo.collection::<Repair>("repairs");
 
     let repair_state_filter = doc!{"status": {"$in": repair_state.into_iter().map(move |s|->String{RepairState::into(s)}).collect::<Vec<String>>()}};
@@ -687,7 +686,6 @@ pub async fn catalog(
             return Ok(Json(results));
         },
         Err(e)=>{
-            dbg!(&e);
             error!("Unable to restore repairs");
             return Err(ApiError::UnprocesableEntity(format!("Unable to restore repairs: {:?}", e)))
         }

@@ -264,7 +264,8 @@ pub async fn create_dummy_repair(
             "product_type": prod_type,
             "brand": "Samsung",
             "model": "asd-123",
-            "serial_number": "123-dfsdfds"
+            "serial_number": "123-dfsdfds",
+            "created_at": Utc::now()
             }
         ]
     };

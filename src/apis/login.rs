@@ -48,7 +48,7 @@ pub async fn login<'r>(
         let id = user_cookie["id"].as_str().unwrap();
         let user = col_users.find_one(doc!{"_id": ObjectId::parse_str(id).unwrap()}, None).await.unwrap();
         match user{
-            Some(u) =>{
+            Some(mut u) =>{
                 let user_cookie_info = json!({
                     "id": u.id.unwrap().to_string(),
                     "role": u.role
@@ -58,10 +58,11 @@ pub async fn login<'r>(
                 now += Duration::hours(10);
                 user_cookie.set_expires(now);
                 cookies.add_private(user_cookie);
-                return Ok(Json(u));
+                u.password="***".to_string();
+                return Ok(Json( u));
             },
             None =>{
-                println!("User from cookie does not exists!");
+                error!("User from cookie does not exists!");
                 return Err(Forbidden(Some("Invalid User or password".to_string())))
             }
         }
@@ -70,9 +71,10 @@ pub async fn login<'r>(
     let filter = doc!{"email": &login_info.email};
     let user = col_users.find_one(filter, None).await.unwrap();
     match user {
-        Some(user) =>{
+        Some(mut user) =>{
             // return user as json
             if let Some(_) =  cookies.get_private("user_id"){
+                user.password="***".to_string();
                 return Ok(Json(user));
             }
             if user.password != hash_password(&login_info.password){

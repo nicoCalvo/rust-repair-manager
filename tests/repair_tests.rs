@@ -77,7 +77,8 @@ mod test {
                 "product_type": "cellphone",
                 "brand": "Samsung",
                 "model": "asd-123",
-                "serial_number": "123-dfsdfds"
+                "serial_number": "123-dfsdfds",
+                "created_at": Utc::now().to_string()
             },
             "description": "No le anda",
             "additional": "si",
@@ -129,7 +130,8 @@ mod test {
                 "product_type": "cellphone",
                 "brand": "Samsung",
                 "model": "asd-123",
-                "serial_number": "123-dfsdfds"
+                "serial_number": "123-dfsdfds",
+                "created_at": Utc::now().to_string()
             },
             "description": "No le anda",
             "additional": "si",
@@ -158,7 +160,8 @@ mod test {
                 "product_type": "cellphone",
                 "brand": "Samsung",
                 "model": "asd-123",
-                "serial_number": "123-dfsdfds-XXX"
+                "serial_number": "123-dfsdfds-XXX",
+                "created_at": Utc::now().to_string()
             },
             "description": "No le anda",
             "additional": "si",
@@ -201,7 +204,8 @@ mod test {
                 "product_type": "cellphone",
                 "brand": "Samsung",
                 "model": "asd-123",
-                "serial_number": "123-dfsdfds"
+                "serial_number": "123-dfsdfds",
+                "created_at": Utc::now().to_string()
             },
             "description": "No le anda",
             "additional": "si",
@@ -230,7 +234,8 @@ mod test {
                 "product_type": "cellphone",
                 "brand": "Samsung",
                 "model": "asd-123",
-                "serial_number": "123-dfsdfds-XXX"
+                "serial_number": "123-dfsdfds-XXX",
+                "created_at": Utc::now().to_string()
             },
             "description": "No le anda",
             "additional": "si",

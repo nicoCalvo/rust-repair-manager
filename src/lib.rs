@@ -16,18 +16,22 @@ use utils::logger::setup_logger;
 
 mod fairings;
 
-
+#[options("/<_..>")]
+fn all_options() {
+    /* Intentionally left empty */
+}
 
 #[launch]
 pub async fn rocket() -> _ {
     _ = setup_logger();
-    // info!("YOLO!");
-    // aca hacer un get config y ver si es debug o no para setear la url
     let db = connect().await;
-    let auth_fair = fairings::request_timer::RequestTimer{};
+    let timer = fairings::request_timer::RequestTimer{};
+    let cors = fairings::cors::CORS{};
     let _rocket = rocket::build()
     .manage(DbPool { mongo: db })
-    .attach(auth_fair)
+    .attach(timer)
+    .attach(cors)
+    .mount("/", routes![all_options])
     .mount("/login", routes![apis::login::login])
     .mount("/logout", routes![apis::login::logout])
     .mount("/repairs", routes![
