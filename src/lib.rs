@@ -39,7 +39,8 @@ pub async fn rocket() -> _ {
         apis::repairs::update_repair,
         apis::repairs::repair_string,
         apis::repairs::repair_int,
-        apis::repairs::catalog])
+        apis::repairs::catalog,
+        apis::repairs::product_types])
     .mount("/customers", routes![apis::customers::create_customer, apis::customers::update_customer])
     .mount("/users", routes![apis::users::create_user, apis::users::get_users]);
     _rocket

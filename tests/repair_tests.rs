@@ -380,4 +380,19 @@ mod test {
     //     dbg!(&res.into_string().await);
     // }
 
+    #[async_test]
+    async fn test_get_product_types() {
+        let mut db = DbFixture::new().await;
+        let mut client = LoggedClient::init().await;
+        let user_id: String = client.with_user("test_update_repair", &mut db, Some("Admin".to_string())).await;
+        let user_id = ObjectId::from_str(&user_id).unwrap();
+        let technician = ObjectId::new();
+        let log_entry = Log{ entry: "Recibida".to_string(), status: RepairState::Received, created_at: Utc::now(), by: "Someone".to_string()};
+        let res = create_dummy_repair(&technician, &db.db, "cellphone".to_string(),"Recibida".to_string(), &user_id, log_entry).await;
+        let res = client.get("/repairs/product_types".to_string()).await;
+        assert_eq!(res.status(), Status::Ok);
+        
+
+    }
+
 }   

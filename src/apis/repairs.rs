@@ -691,3 +691,40 @@ pub async fn catalog(
         }
     }
 }
+
+
+
+#[get("/product_types")]
+pub async fn product_types(
+    user: UserRequest,
+    db: &State<DbPool>
+)->Result<Json<Vec<String>>, ApiError>{
+    let repairs_col = db.mongo.collection::<Document>("repairs");
+    let mut prod_types: Vec<String> = Vec::new();
+    match repairs_col.aggregate([
+            doc!{
+                "$project": {"_id": 0, "type": "$product.product_type"},
+            },
+            doc!{
+                "$group": {"_id": "$type"}
+            },
+            doc!{
+                "$project": {"type": "$_id", "_id":0}
+            }
+        
+            ], None).await{
+                Ok(mut cur)=> {
+                        while cur.advance().await.unwrap(){
+                            let prod_type = cur.deserialize_current().unwrap();
+                            prod_types.push(prod_type.get_str("type").unwrap().to_string());
+                        };
+                        return Ok(Json(prod_types));
+                },
+                Err(_e)=>{
+                    error!("Unable to retrieve product types {}", _e);
+                    Err(ApiError::UnprocesableEntity("Unable to retrieve product types".to_string()))
+                }
+            }
+
+}
+        
