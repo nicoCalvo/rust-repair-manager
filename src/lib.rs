@@ -21,6 +21,7 @@ fn all_options() {
     /* Intentionally left empty */
 }
 
+
 #[launch]
 pub async fn rocket() -> _ {
     _ = setup_logger();
@@ -41,7 +42,7 @@ pub async fn rocket() -> _ {
         apis::repairs::repair_int,
         apis::repairs::catalog,
         apis::repairs::product_types])
-    .mount("/customers", routes![apis::customers::create_customer, apis::customers::update_customer])
+    .mount("/customers", routes![apis::customers::create_customer, apis::customers::update_customer, apis::customers::get_customers])
     .mount("/users", routes![apis::users::create_user, apis::users::get_users]);
     _rocket
 }

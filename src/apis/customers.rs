@@ -1,3 +1,5 @@
+use bson::Document;
+use bson::oid::ObjectId;
 use bson::to_document;
 use mongodb::bson::doc;
 use rocket::State;
@@ -116,6 +118,55 @@ pub async fn update_customer(
         },
         Err(e) =>{
             println!("ERROR! {}", e);
+            Err(ApiError::InternalError("Unable to retrieve customer".to_string()))
+        }
+    }
+
+}
+
+
+
+#[get("/?<id>&<name>&<last_name>")]
+pub async fn get_customers(
+    id: Option<&str>,
+    name: Option<&str>,
+    last_name: Option<&str>,
+    _user: UserRequest,
+    db: &State<DbPool>
+)->Result<Json<Vec<Document>>, ApiError>{
+    let cus_col = db.mongo.collection::<Document>("customers");
+    let id_filter = match id{
+        Some(id)=> doc!{"_id": ObjectId::parse_str(id).unwrap()},
+        None => doc!{}
+    };
+    let name_filter = match name{
+        Some(name)=> doc!{"name": name},
+        None => doc!{}
+    };
+    let last_name_filter = match last_name{
+        Some(last_name)=> doc!{"name": last_name},
+        None => doc!{}
+    };
+
+    let match_query = doc!{
+        "$match": {
+            "$and": [
+                id_filter,
+                name_filter,
+                last_name_filter
+            ]
+        }
+    };
+    match cus_col.aggregate([match_query], None).await{
+        Ok(mut cur)=>{
+            let mut customers: Vec<Document> = Vec::new();
+            while cur.advance().await.unwrap(){
+                let customer: Document = cur.deserialize_current().unwrap();
+                customers.push(customer)
+            };
+            return Ok(Json(customers))
+        },
+        Err(_e)=>{
             Err(ApiError::InternalError("Unable to retrieve customer".to_string()))
         }
     }

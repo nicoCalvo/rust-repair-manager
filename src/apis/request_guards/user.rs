@@ -3,6 +3,7 @@ use bson::doc;
 
 
 use bson::oid::ObjectId;
+use chrono::{NaiveDateTime, Utc};
 use mongodb::Collection;
 use rocket::outcome::Outcome::{*, self};
 use rocket::request::{self, Request, FromRequest};
@@ -48,11 +49,24 @@ impl<'r> FromRequest<'r> for UserRequest{
         let pool: &DbPool = request.rocket().state::<DbPool>().unwrap();
         let users_col: Collection<User> = pool.mongo.collection::<User>("users");
         let user_cookie = request.cookies().get_private("user");
+
         if let Some(user) = user_cookie {
-            if user.expires_datetime().unwrap() <=  OffsetDateTime::now_utc(){
+            let user: Result<Value, _> = json::from_str(user.value());
+            let user = match user{
+                Ok(val)=>val,
+                Err(_e)=>{
+                    error!("Invalid cookie provided");
+                    return Outcome::Failure((Status::Forbidden, AuthCookieError::Missing))
+                }
+            };
+
+            let expiration_ts = NaiveDateTime::parse_from_str(user["expires"].as_str().unwrap(),"%Y-%m-%d %H:%M:%S").unwrap();
+            let now = Utc::now().naive_utc();
+            if expiration_ts <=  now{
+                error!("expired session for user: {:?}", &user);
                 return Outcome::Failure((Status::Forbidden, AuthCookieError::Missing))
             }
-            let user: Value = json::from_str(user.value()).unwrap_or(json!({"id": ""}));
+            
             let id = user["id"].as_str().unwrap();
             match ObjectId::parse_str(id){
                 Ok(user) =>{
@@ -61,6 +75,7 @@ impl<'r> FromRequest<'r> for UserRequest{
                         Success(Self{id: user_obj.id.unwrap(), name: user_obj.username, role: user_obj.role})
                     }
                     else{
+                        error!("inactive user: {:#?}", &user_res);
                         Outcome::Failure((Status::Forbidden, AuthCookieError::Invalid))
                     }
                 },

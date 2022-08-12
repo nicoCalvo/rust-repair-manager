@@ -110,5 +110,21 @@ mod test {
         }
     }
 
-  
+    #[async_test]
+    async fn test_get_customers() {
+        let mut db = DbFixture::new().await;
+        let cus1 = Customer{name: "test_get_customers".to_string(), ..Default::default()};
+        let cus2 = Customer{name: "test_get_customers2".to_string(), ..Default::default()};
+        let id1 = db.create_customer(cus1).await;
+        let id2 = db.create_customer(cus2).await;
+        let mut client = LoggedClient::init().await;
+        client.with_user("test_create_existing_customer", &mut db, Some("Admin".to_string())).await;
+        let resp = client.get("/customers".to_string()).await;
+        assert_eq!( resp.status(), Status::Ok);
+        let cus_col = db.db.collection::<Customer>("customers");
+        _ = cus_col.delete_one(doc!{"_id": ObjectId::parse_str(id1).unwrap()}, None);
+        _ = cus_col.delete_one(doc!{"_id": ObjectId::parse_str(id2).unwrap()}, None);
+        db.clean().await;
+
+    }
 }

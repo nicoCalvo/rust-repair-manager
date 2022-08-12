@@ -2,7 +2,7 @@ use mongodb::bson::oid::ObjectId;
 
 use mongodb::Collection;
 use mongodb::bson::{doc};
-use rocket::time::{OffsetDateTime, Duration};
+use rocket::time::{OffsetDateTime, Duration, format_description};
 use serde::{Deserialize, Serialize};
 use rocket::http::{Cookie, CookieJar};
 use rocket::serde::json::{Json, self};
@@ -47,16 +47,24 @@ pub async fn login<'r>(
         let id = user_cookie["id"].as_str().unwrap();
         let user = col_users.find_one(doc!{"_id": ObjectId::parse_str(id).unwrap()}, None).await.unwrap();
         match user{
-
+            
             Some(mut u) =>{
-                let user_cookie_info = json!({
-                    "id": u.id.unwrap().to_string(),
-                    "role": u.role
-                });
-                let mut user_cookie = Cookie::new("user", user_cookie_info.to_string());
                 let mut now = OffsetDateTime::now_utc();
                 now += Duration::hours(10);
+                let format = format_description::parse(
+                    "[year]-[month]-[day] [hour]:[minute]:[second]",
+                ).unwrap();
+                let ts_string = now.format(&format).unwrap();
+                let user_cookie_info = json!({
+                    "id": u.id.unwrap().to_string(),
+                    "role": u.role,
+                    "expires": ts_string
+                });
+                let mut user_cookie = Cookie::new("user", user_cookie_info.to_string());
+                
                 user_cookie.set_expires(now);
+                user_cookie.set_secure(true);
+                user_cookie.http_only();
                 cookies.add_private(user_cookie);
                 u.password="***".to_string();
                 return Ok(Json( u));
@@ -73,20 +81,26 @@ pub async fn login<'r>(
     match user {
         Some(mut user) =>{
             // return user as json
-            if let Some(_) =  cookies.get_private("user_id"){
+            if let Some(_) =  cookies.get_private("user"){
                 user.password="***".to_string();
                 return Ok(Json(user));
             }
             if user.password != hash_password(&login_info.password){
                 Err(Forbidden(Some("Invalid User or password".to_string())))
             }else{
-                let user_cookie_info = json!({
-                    "id": user.id.unwrap().to_string(),
-                    "role": user.role
-                });
-                let mut user_cookie = Cookie::new("user", user_cookie_info.to_string());
                 let mut now = OffsetDateTime::now_utc();
                 now += Duration::hours(10);
+                let format = format_description::parse(
+                    "[year]-[month]-[day] [hour]:[minute]:[second]",
+                ).unwrap();
+                let ts_string = now.format(&format).unwrap();
+                let user_cookie_info = json!({
+                    "id": user.id.unwrap().to_string(),
+                    "role": user.role,
+                    "expires": ts_string
+                });
+                let mut user_cookie = Cookie::new("user", user_cookie_info.to_string());
+                user_cookie.set_secure(true);
                 user_cookie.set_expires(now);
                 cookies.add_private(user_cookie);
                 info!("User {} has logged in", user.username);
