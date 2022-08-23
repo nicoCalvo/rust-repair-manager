@@ -144,7 +144,7 @@ pub async fn get_customers(
         None => doc!{}
     };
     let last_name_filter = match last_name{
-        Some(last_name)=> doc!{"name": last_name},
+        Some(last_name)=> doc!{"last_name": last_name},
         None => doc!{}
     };
 
