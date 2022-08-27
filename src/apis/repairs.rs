@@ -54,8 +54,7 @@ pub struct CustomerRequest{
     pub name: String,
     pub last_name: String,
     pub location: String,
-    pub street: String,
-    pub number: String,
+    pub address: String,
     pub phone: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
@@ -72,6 +71,7 @@ pub struct RepairRequest{
     pub suggested_price: i32,
     #[serde(with = "date_format")]
     pub estimated_fixed_date: chrono::NaiveDate,
+    pub received_date: chrono::DateTime<chrono::Utc>,
 }
 
 
@@ -239,6 +239,7 @@ pub async fn create_repair(
     user: UserRequest,
     db: &State<DbPool>
 )-> Result<Json<Document>, ApiError>{
+    
     let repair_request: RepairRequest = repair_request.into_inner();
     let asd = Utc::now().date().naive_utc();
     if repair_request.estimated_fixed_date < asd{
@@ -246,7 +247,6 @@ pub async fn create_repair(
     }
     let customers_col = db.mongo.collection::<Customer>("customers");
     let repairs_col = db.mongo.collection::<Repair>("repairs");
-
     let mut customer: Customer = match create_or_restore_customer(&customers_col, repair_request.customer.clone()).await{
         Ok(cus)=> cus,
         Err(_e)=>{
@@ -318,7 +318,7 @@ async fn  _create_repair(
             additional: repair_request.additional.to_owned().unwrap(),
             suggested_price: repair_request.suggested_price,
             warranty: repair_request.warranty,
-            received_date:  Utc::now(),
+            received_date:  repair_request.received_date,
             estimated_fixed_date: repair_request.estimated_fixed_date,
             finished_repair: None,
             delivered_date: None,
@@ -384,8 +384,7 @@ async fn create_or_restore_customer(customer_col: &Collection<Customer>, custome
         "name": customer_data.name,
         "last_name": customer_data.last_name,
         "location": customer_data.location,
-        "street": customer_data.street,
-        "number": customer_data.number,
+        "address": customer_data.address,
         "phone": customer_data.phone,
     };
     

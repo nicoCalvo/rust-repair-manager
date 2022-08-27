@@ -44,8 +44,7 @@ pub async fn create_customer(
                   {"name": {"$eq": post_customer.name.clone()}},
                   {"last_name": {"$eq": post_customer.last_name.clone()}},
                   {"location": {"$eq": post_customer.location.clone()}},
-                  {"street": {"$eq": post_customer.street.clone()}},
-                  {"number": {"$eq": post_customer.number.clone()}}
+                  {"address": {"$eq": post_customer.address.clone()}},
                  
               ]   
         };
@@ -86,9 +85,7 @@ pub struct UpdateCustomer {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub street: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub number: Option<String>,
+    pub address: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub phone: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]

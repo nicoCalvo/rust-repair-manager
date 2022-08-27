@@ -255,8 +255,7 @@ pub async fn create_dummy_repair(
         "name": cus_id.to_hex(),
         "last_name": cus_id.to_hex(),
         "location": "white bay",
-        "street": "avenida siempre viva",
-        "number": "2",
+        "address": "avenida siempre viva 2",
         "phone": "12345",
         "email": "si",
         "products":[doc!{

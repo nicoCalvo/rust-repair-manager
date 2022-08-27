@@ -13,8 +13,7 @@ pub struct Customer {
     pub name: String,
     pub last_name: String,
     pub location: String,
-    pub street: String,
-    pub number: String,
+    pub address: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub phone: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -31,8 +30,7 @@ impl Default for Customer{
             name: "No declarado".to_string(),
             last_name: "No declarado".to_string(),
             location: "Bahia Blanca".to_string(),
-            street: "No declarada".to_string(),
-            number: "".to_string(),
+            address: "No declarada".to_string(),
             phone: None,
             email: None,
             repaired_products: Vec::new()
