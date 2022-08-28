@@ -67,7 +67,6 @@ pub struct RepairRequest{
     pub product: RepairedProduct,
     pub description: String,
     pub additional: Option<String>,
-    pub warranty: i32, //default 6 months
     pub suggested_price: i32,
     #[serde(with = "date_format")]
     pub estimated_fixed_date: chrono::NaiveDate,
@@ -317,7 +316,7 @@ async fn  _create_repair(
             description: repair_request.description.to_string(),
             additional: repair_request.additional.to_owned().unwrap(),
             suggested_price: repair_request.suggested_price,
-            warranty: repair_request.warranty,
+            warranty: 6,
             received_date:  repair_request.received_date,
             estimated_fixed_date: repair_request.estimated_fixed_date,
             finished_repair: None,

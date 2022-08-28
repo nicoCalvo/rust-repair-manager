@@ -49,7 +49,6 @@ mod test {
             "description": "No le anda",
             "additional": "si",
             "suggested_price": 23,
-            "warranty": 6,
             "estimated_fixed_date": Utc::now().date().format("%Y-%m-%d").to_string(),
             "received_date": Utc::now().date().format("%Y-%m-%d").to_string()
         };
@@ -101,7 +100,6 @@ mod test {
             "description": "No le anda",
             "additional": "si",
             "suggested_price": 23,
-            "warranty": 6,
             "estimated_fixed_date": Utc::now().date().format("%Y-%m-%d").to_string(),
             "received_date": Utc::now().date().format("%Y-%m-%d").to_string()
         };
@@ -130,7 +128,6 @@ mod test {
             "description": "No le anda",
             "additional": "si",
             "suggested_price": 23,
-            "warranty": 6,
             "estimated_fixed_date": Utc::now().date().format("%Y-%m-%d").to_string(),
             "received_date": Utc::now().date().format("%Y-%m-%d").to_string()
         };
@@ -173,7 +170,6 @@ mod test {
             "description": "No le anda",
             "additional": "si",
             "suggested_price": 23,
-            "warranty": 6,
             "estimated_fixed_date": Utc::now().date().format("%Y-%m-%d").to_string(),
             "received_date": Utc::now().date().format("%Y-%m-%d").to_string()
         };
@@ -203,7 +199,6 @@ mod test {
             "description": "No le anda",
             "additional": "si",
             "suggested_price": 23,
-            "warranty": 6,
             "estimated_fixed_date": Utc::now().date().format("%Y-%m-%d").to_string(),
             "received_date": Utc::now().date().format("%Y-%m-%d").to_string()
         };
