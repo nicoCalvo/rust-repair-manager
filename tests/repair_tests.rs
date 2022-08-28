@@ -51,7 +51,7 @@ mod test {
             "suggested_price": 23,
             "warranty": 6,
             "estimated_fixed_date": Utc::now().date().format("%Y-%m-%d").to_string(),
-            "received_date": Utc::now().to_string()
+            "received_date": Utc::now().date().format("%Y-%m-%d").to_string()
         };
         
         let res = client.post(&repair_request, "/repairs/repair".to_string()).await;
@@ -103,7 +103,7 @@ mod test {
             "suggested_price": 23,
             "warranty": 6,
             "estimated_fixed_date": Utc::now().date().format("%Y-%m-%d").to_string(),
-            "received_date": Utc::now().to_string()
+            "received_date": Utc::now().date().format("%Y-%m-%d").to_string()
         };
         
         let res = client.post(&repair_request, "/repairs/repair".to_string()).await;
@@ -132,7 +132,7 @@ mod test {
             "suggested_price": 23,
             "warranty": 6,
             "estimated_fixed_date": Utc::now().date().format("%Y-%m-%d").to_string(),
-            "received_date": Utc::now().to_string()
+            "received_date": Utc::now().date().format("%Y-%m-%d").to_string()
         };
         let res = client.post(&repair_request2, "/repairs/repair".to_string()).await;
         let res = res.into_json::<Document>().await.unwrap();
@@ -175,7 +175,7 @@ mod test {
             "suggested_price": 23,
             "warranty": 6,
             "estimated_fixed_date": Utc::now().date().format("%Y-%m-%d").to_string(),
-            "received_date": Utc::now().to_string()
+            "received_date": Utc::now().date().format("%Y-%m-%d").to_string()
         };
         
         let res = client.post(&repair_request, "/repairs/repair".to_string()).await;
@@ -205,7 +205,7 @@ mod test {
             "suggested_price": 23,
             "warranty": 6,
             "estimated_fixed_date": Utc::now().date().format("%Y-%m-%d").to_string(),
-            "received_date": Utc::now().to_string()
+            "received_date": Utc::now().date().format("%Y-%m-%d").to_string()
         };
 
         let res = client.post(&repair_request, "/repairs/repair".to_string()).await;

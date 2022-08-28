@@ -71,7 +71,7 @@ pub struct RepairRequest{
     pub suggested_price: i32,
     #[serde(with = "date_format")]
     pub estimated_fixed_date: chrono::NaiveDate,
-    pub received_date: chrono::DateTime<chrono::Utc>,
+    pub received_date: chrono::NaiveDate,
 }
 
 

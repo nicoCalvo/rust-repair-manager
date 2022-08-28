@@ -68,7 +68,7 @@ pub struct Repair {
     pub additional: String,
     pub suggested_price: i32,
     pub warranty: i32,
-    pub received_date: chrono::DateTime<chrono::Utc>,
+    pub received_date: chrono::NaiveDate,
     #[serde(with = "date_format")]
     pub estimated_fixed_date: chrono::NaiveDate,//   "received_date":  bson::Bson::DateTime(DateTime::from(Utc::now())),
     //                                               "estimated_fixed_date": Utc::now().date().format("%Y-%m-%d").to_string(),
@@ -103,7 +103,7 @@ impl Default for Repair{
             additional: Default::default(),
             suggested_price: Default::default(),
             warranty:6,
-            received_date: Utc::now(),
+            received_date: naive_date,
             estimated_fixed_date:naive_date,
             finished_repair: Default::default(),
             delivered_date: Default::default(),
