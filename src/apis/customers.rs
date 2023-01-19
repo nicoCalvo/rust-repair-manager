@@ -106,8 +106,6 @@ pub async fn update_customer(
         "$set": 
             to_document(&customer).unwrap()
     };
-    dbg!(&doc);
-    println!("DOC!:{}", customer.id);
     match customers_col.update_one(doc!{"_id": customer.id}, doc, None).await{
         Ok(_) =>{
             println!("Customer {:?} updated", customer.id);
@@ -144,7 +142,6 @@ pub async fn get_customers(
         Some(last_name)=> doc!{"last_name": last_name},
         None => doc!{}
     };
-
     let match_query = doc!{
         "$match": {
             "$and": [

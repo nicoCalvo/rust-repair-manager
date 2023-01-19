@@ -6,7 +6,8 @@ use mongodb::bson::DateTime;
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub enum Role{
     Admin,
-    Technician
+    Technician,
+    Sales
 }
 
 impl From<&str> for Role{
@@ -14,6 +15,7 @@ impl From<&str> for Role{
         match role{
             "Admin" => Role::Admin,
             "Technician" => Role::Technician,
+            "Sales" => Role::Sales,
             _ => unreachable!()
         }
     }
@@ -25,6 +27,7 @@ impl Into<String> for Role{
         match self{
             Role::Admin => "Admin".to_string(),
             Role::Technician => "Technician".to_string(),
+            Role::Sales => "Sales".to_string(),
         }
     }
 }

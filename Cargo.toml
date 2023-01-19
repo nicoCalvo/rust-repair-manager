@@ -44,5 +44,8 @@ name = "more_errors"
 [[example]]
 name = "dates"
 
+[[example]]
+name = "hash_password"
+
 [dev-dependencies]
 serde_json = "1.0.66"

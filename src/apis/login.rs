@@ -1,3 +1,4 @@
+use log::info;
 use mongodb::bson::oid::ObjectId;
 
 use mongodb::Collection;
@@ -40,7 +41,6 @@ pub async fn login<'r>(
     mongo_db: &State<DbPool>,
 )-> Result<Json<User>, Forbidden<String>>{
     let col_users: Collection<User> = mongo_db.mongo.collection("users");
-
     // Return existing session if valid cookie provided
     if let Some(user_cookie) =  cookies.get_private("user"){
         let user_cookie: Value = json::from_str(user_cookie.value()).unwrap();
@@ -78,6 +78,7 @@ pub async fn login<'r>(
     // look for the user and check matching password
     let filter = doc!{"email": &login_info.email};
     let user = col_users.find_one(filter, None).await.unwrap();
+
     match user {
         Some(mut user) =>{
             // return user as json
@@ -108,14 +109,18 @@ pub async fn login<'r>(
                 return Ok(Json(user));
             }
         },
-        _ => Err(Forbidden(Some("Invalid User or password".to_string())))
+        _ => {
+            info!("invalid login: {:?}", login_info);
+            return Err(Forbidden(Some("Invalid User or password".to_string())))
+        }
     }
 
 
 }
 
 #[post("/logout")]
-pub fn logout(cookies: &CookieJar<'_>) {
+pub fn logout(cookies: &CookieJar<'_>) -> Result<(), Forbidden<String>> {
     cookies.remove_private(Cookie::named("user"));
+    return Ok(());
     
 }

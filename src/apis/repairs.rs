@@ -1,4 +1,6 @@
 #![allow(unused_imports, dead_code, unused_variables)]
+use std::str::FromStr;
+
 use crate::models;
 
 use crate::database;
@@ -238,10 +240,10 @@ pub async fn create_repair(
     user: UserRequest,
     db: &State<DbPool>
 )-> Result<Json<Document>, ApiError>{
-    
     let repair_request: RepairRequest = repair_request.into_inner();
     let asd = Utc::now().date().naive_utc();
     if repair_request.estimated_fixed_date < asd{
+        error!("Invalid estimated fixed date: {}", repair_request.estimated_fixed_date);
         return Err(ApiError::Forbidden("Invalid est fixed date".to_string()))
     }
     let customers_col = db.mongo.collection::<Customer>("customers");
@@ -249,7 +251,7 @@ pub async fn create_repair(
     let mut customer: Customer = match create_or_restore_customer(&customers_col, repair_request.customer.clone()).await{
         Ok(cus)=> cus,
         Err(_e)=>{
-            println!("error!");
+            info!(" {}",_e);
             return Err(ApiError::InternalError("unable to restore or create customer".to_string()))
         }
     };
@@ -258,6 +260,7 @@ pub async fn create_repair(
     let product: &RepairedProduct = match create_or_restore_product(&mut customer, &customers_col, &mut product_request).await{
         Ok(prod) => prod,
         Err(_e)=>{
+            error!("{}", _e);
             return Err(ApiError::InternalError("unable to restore or create customer".to_string()))
         }
     };
@@ -273,20 +276,28 @@ pub async fn create_repair(
     match repairs_col.find_one(_filter, None).await{
         Ok(res) =>{
             if let Some(existing_repair) = res{
+                info!("Product is currently under repair!");
                 let msg: String = format!("Product is currently under repair: {}", existing_repair.id.unwrap().to_hex());
                 return Err(ApiError::UnprocesableEntity(msg))
             }
         },
-        Err(_e)=> return Err(ApiError::InternalError("unable to create repair".to_string()))
+        Err(_e)=> {
+            error!("{}", _e);
+            return Err(ApiError::InternalError("unable to create repair".to_string()))
+        }
     };
     match _create_repair(&repairs_col, customer_id, product, &repair_request, &user).await{
         Ok(rep_id) =>{
-            println!("repair created!");
+            info!("repair created!");
             let mut response = rep_id.into_inner();
             response.extend(doc!{"customer_id": customer_id});
+            info!("{}", &response);
             return Ok(Json(response))
         },
-        Err(_e)=> return Err(ApiError::InternalError("unable to create repair".to_string()))
+        Err(_e)=> {
+            error!(" {}", _e);
+            return Err(ApiError::InternalError("unable to create repair".to_string()))
+        }
     };
 
    
@@ -301,7 +312,10 @@ async fn  _create_repair(
 )-> AnyResult<Json<Document>, anyhow::Error>{
     let mut created = false;
     let mut tries = 1;
+    
     while !created && tries < MAX_RETRIES{
+        let mut logs = Vec::new();
+        logs.push(Log{by:user.name.to_string(), entry: "RECIBIDA".to_string(), created_at: Utc::now(), status:  RepairState::Received});
         let latest_repair: i32 =_get_latest_repair_id(repairs_col).await?;
         let repair = Repair{
             id: None,
@@ -311,7 +325,7 @@ async fn  _create_repair(
             product: product.to_owned(),
             technician: None,
             technician_id: None,
-            logs: Vec::new(),
+            logs: logs,
             status: RepairState::Received,
             description: repair_request.description.to_string(),
             additional: repair_request.additional.to_owned().unwrap(),
@@ -343,7 +357,7 @@ async fn  _create_repair(
             }
         };
         if let Some(repair_id) = repair_id{
-            return Ok(Json(doc!{"repair_id": &repair_id}));
+            return Ok(Json(doc!{"repair_id": &repair_id, "repair_num_id": latest_repair + 1}));
         }
     }
     error!("max retries trying to pick a repair _id");
@@ -620,8 +634,10 @@ pub async fn catalog(
     db: &State<DbPool>
 ) -> Result<Json<Vec<Document>>, ApiError>{
     let repairs_col = db.mongo.collection::<Repair>("repairs");
-
+    info!("{:?}", &repair_state);
     let repair_state_filter = doc!{"status": {"$in": repair_state.into_iter().map(move |s|->String{RepairState::into(s)}).collect::<Vec<String>>()}};
+    
+    info!("{}", repair_state_filter.to_string());
     let technician_filter = match technician{
         Some(tech)=> doc!{"technician": {"$eq": tech}},
         None => doc!{}
@@ -674,7 +690,6 @@ pub async fn catalog(
                     
             }
         };
-    // let project = doc!{"$project": {"status": 1, "_id": 1}};
     match repairs_col.aggregate([ doc!{"$match": filter_condition}, customer_info ], None).await{
         Ok(mut cursor) => {
             let mut results: Vec<Document> = Vec::new();
@@ -718,11 +733,40 @@ pub async fn product_types(
                         };
                         return Ok(Json(prod_types));
                 },
-                Err(_e)=>{
-                    error!("Unable to retrieve product types {}", _e);
+                Err(e)=>{
+                    error!("Unable to retrieve product types {}", e);
                     Err(ApiError::UnprocesableEntity("Unable to retrieve product types".to_string()))
                 }
             }
 
 }
+
+
+#[get("/customer?<customer_id>")]
+pub async fn customer_repairs(
+    customer_id: &str,
+    user: UserRequest,
+    db: &State<DbPool>
+)->Result<Json<Vec<Document>>, ApiError>{
+    let repairs_col = db.mongo.collection::<Document>("repairs");
+    // let customer = ObjectId::from_str(customer_id);
+    let res = repairs_col.aggregate([
+        doc!{
+            "$match": {"customer": ObjectId::parse_str(customer_id).unwrap()}
+        },
         
+    ], None).await;
+    match res {
+        Ok(mut cursor) =>{
+            let mut results: Vec<Document> = Vec::new();
+            while cursor.advance().await.unwrap(){
+                results.push(cursor.deserialize_current().unwrap())
+            }
+            return Ok(Json(results));
+        },
+        Err(e)=>{
+            error!("Unable to retrieve repairs for customer {} - ERROR: {}",customer_id, e);
+            Err(ApiError::UnprocesableEntity("Unable to retrieve repairs".to_string()))
+        }
+    }
+}

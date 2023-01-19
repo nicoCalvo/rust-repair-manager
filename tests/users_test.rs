@@ -84,4 +84,30 @@ mod test {
         assert!(asd.len() >= 1);
         db.clean().await;
     }
+
+    #[async_test]
+    async fn activate_users() {
+        let mut client = LoggedClient::init().await;
+        let mut db = DbFixture::new().await;
+        let res = db.load_users().await;
+        let user_ids = doc!{"ids": res.clone()};
+        client.with_user("test_get_users@email.com", &mut db, Some("Admin".to_string())).await;
+        let resp = client.put::<Document>(&user_ids, "/users/activate".to_string()).await;
+        assert_eq!( resp.status(), Status::Ok);
+        let users_col = db.db.collection::<User>("users");
+        let update_user_ids = users_col.find(doc!{"_id": {"$in": &res}}, None).await;
+        match update_user_ids{
+            Ok(mut cursor)=>{
+                while cursor.advance().await.unwrap(){
+                    let user: User = cursor.deserialize_current().unwrap();
+                    assert!(user.active == false);
+                }
+            },
+            Err(e)=>{
+                println!("{}", e.to_string());
+                assert_eq!(1,0);
+            }
+        }
+        db.clean().await
+    }
 }
